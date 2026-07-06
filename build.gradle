@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow' version '8.3.5'
+}
+
+group = 'mcrl'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.ow2.asm:asm:9.7'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+def agentManifest = {
+    attributes(
+        'Premain-Class': 'mcrl.agent.McrlAgent',
+        'Agent-Class': 'mcrl.agent.McrlAgent',
+        'Can-Retransform-Classes': 'true',
+        'Can-Redefine-Classes': 'true'
+    )
+}
+
+jar {
+    manifest(agentManifest)
+}
+
+shadowJar {
+    archiveBaseName.set('mcrl')
+    archiveClassifier.set('')
+    archiveVersion.set('')
+    manifest(agentManifest)
+}
+
+tasks.named('build') {
+    dependsOn(tasks.named('shadowJar'))
+}
