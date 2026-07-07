@@ -1,13 +1,13 @@
 #!/bin/bash
 # Launches a representative spread of PrismLauncher instances one at a time.
 # For each: launch it, give it a few seconds to start, then just wait until
-# nothing Prism-related is running anymore - the moment that happens, check for
+# nothing Prism-related is running anymore, the moment that happens, check for
 # a new crash report and either move on or stop. Doesn't try to precisely catch
 # the exact instance's process, just whether anything Prism-related is open.
 #
 # Requires JDK_JAVA_OPTIONS already pointed at mcrl.jar via
 #   flatpak override --user --env=JDK_JAVA_OPTIONS=... org.prismlauncher.PrismLauncher
-# (already set up earlier - every instance below inherits it automatically since
+# (already set up earlier, every instance below inherits it automatically since
 # they all launch through the same Flatpak app).
 
 set -u
@@ -99,7 +99,7 @@ for name in "${ORDER[@]}"; do
     break
   fi
 
-  echo "  No new crash report - clean exit. Moving on."
+  echo "  No new crash report, clean exit. Moving on."
   PASSED+=("$name ($loader)")
 done
 

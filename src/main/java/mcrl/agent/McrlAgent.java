@@ -3,10 +3,10 @@ package mcrl.agent;
 import java.lang.instrument.Instrumentation;
 
 /**
- * Mcrl - Minecraft Chat Restrictions Lifted.
+ * Mcrl, Minecraft Chat Restrictions Lifted.
  *
  * A JVM agent, not a mod: it attaches below whatever mod loader (or no loader at
- * all - vanilla) is running, so the same jar works across Forge, NeoForge, Fabric,
+ * all, vanilla) is running, so the same jar works across Forge, NeoForge, Fabric,
  * Quilt, and vanilla without a rebuild per loader.
  */
 public final class McrlAgent {

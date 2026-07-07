@@ -1,4 +1,4 @@
-# Mcrl (pronounced "em-curl") - Minecraft Chat Restrictions Lifted
+# Mcrl (pronounced "em-curl"), Minecraft Chat Restrictions Lifted
 
 A JVM agent that clears the Microsoft/Xbox account-level "chat disabled" check on the
 Minecraft Java client. It doesn't touch chat signing or reporting, that's a separate
@@ -43,28 +43,28 @@ should look like. (An earlier version of this file said vanilla didn't work befo
 Hit `Win + R`, paste this, hit Enter:
 
 ```
-powershell -Command "$dir = \"$env:USERPROFILE\Documents\Mcrl\"; New-Item -ItemType Directory -Force -Path $dir | Out-Null; Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Dylanthedabber/mcrl/master/mcrl.jar' -OutFile \"$dir\mcrl.jar\"; setx JDK_JAVA_OPTIONS \"-javaagent:$dir\mcrl.jar\""
+powershell -Command "$dir = \"$env:LOCALAPPDATA\Mcrl\"; New-Item -ItemType Directory -Force -Path $dir | Out-Null; Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Dylanthedabber/mcrl/master/mcrl.jar' -OutFile \"$dir\mcrl.jar\"; setx JDK_JAVA_OPTIONS \"-javaagent:$dir\mcrl.jar\""
 ```
 
-That downloads the jar straight from this repo into `Documents\Mcrl\mcrl.jar` and sets
-the environment variable in one shot, no manual folder setup needed. Then close every
-open Minecraft launcher window (official launcher, PrismLauncher, CurseForge, whatever
-you use) and reopen.
+That downloads the jar straight from this repo into `%LOCALAPPDATA%\Mcrl\mcrl.jar` and
+sets the environment variable in one shot, no manual folder setup needed.
+`%LOCALAPPDATA%` is a good spot for this specifically because it's hidden by default
+and not somewhere you'd stumble across while tidying up Documents or Desktop, so
+there's no risk of deleting it by accident later. Then close every open Minecraft
+launcher window (official launcher, PrismLauncher, CurseForge, whatever you use) and
+reopen.
 
 That's it, this sticks around from now on. No per-instance JVM argument, no
 re-running this after updates, and no re-running it after Mcrl itself gets updated
 either since it always pulls the current jar. Works on any Minecraft Java version, any
 loader, and unmodified vanilla.
 
-If your Documents folder gets redirected by OneDrive on your Windows account, edit the
-path in the command above before running it.
-
 Prefer not to run something that downloads off the internet via Win+R? Fair. Manual
-version: clone or download this repo, put the whole folder in your Documents folder so
-you end up with `Documents\Mcrl\mcrl.jar`, then just run the `setx` part yourself:
+version: clone or download this repo, put the whole folder at `%LOCALAPPDATA%\Mcrl` so
+you end up with `%LOCALAPPDATA%\Mcrl\mcrl.jar`, then just run the `setx` part yourself:
 
 ```
-cmd /c setx JDK_JAVA_OPTIONS "-javaagent:%USERPROFILE%\Documents\Mcrl\mcrl.jar"
+cmd /c setx JDK_JAVA_OPTIONS "-javaagent:%LOCALAPPDATA%\Mcrl\mcrl.jar"
 ```
 
 ## Linux / macOS
@@ -111,7 +111,7 @@ Checked against real bytecode, not assumed:
 
 | Range | Shape matched | Vanilla | Forge / NeoForge | Fabric / Quilt |
 |---|---|---|---|---|
-| 1.19 - 1.21.11 (24 releases) | legacy enum getter | Yes | Yes | Yes |
+| 1.19 through 1.21.11 (24 releases) | legacy enum getter | Yes | Yes | Yes |
 | 26.1, 26.2 | modern `ChatAbilities` builder | Yes | Yes* | Yes* |
 
 \* Whether a Forge/NeoForge or Fabric/Quilt build for 26.x actually exists yet is

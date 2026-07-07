@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Two real shapes exist depending on Minecraft's era, both confirmed against real
  * client jars and official mappings (see the project's verification notes):
  *
- * Legacy shape (1.19 - 1.21.11, Forge "Minecraft.getChatStatus()" / Fabric
+ * Legacy shape (1.19 through 1.21.11, Forge "Minecraft.getChatStatus()" / Fabric
  * "MinecraftClient.getChatRestriction()"): a single enum with constants ENABLED,
  * DISABLED_BY_OPTIONS, DISABLED_BY_PROFILE, DISABLED_BY_LAUNCHER, and a zero-arg
  * getter returning it. Patched by swapping DISABLED_BY_PROFILE for ENABLED on return.
@@ -31,12 +31,12 @@ import java.util.concurrent.atomic.AtomicReference;
  * Modern shape (26.1+, unobfuscated): Mojang restructured this into a
  * "ChatAbilities" object built from a set of "ChatRestriction" enum constants
  * (CHAT_AND_COMMANDS_DISABLED_BY_OPTIONS, CHAT_DISABLED_BY_OPTIONS,
- * DISABLED_BY_LAUNCHER, DISABLED_BY_PROFILE - no ENABLED constant at all; "no
+ * DISABLED_BY_LAUNCHER, DISABLED_BY_PROFILE, no ENABLED constant at all; "no
  * restriction" is the absence of any). Patched by no-opping the fluent
  * "addRestriction(ChatRestriction) -> same builder type" method whenever it's
  * called with DISABLED_BY_PROFILE, so that reason never gets recorded.
  *
- * Neither strategy hardcodes a class or method name - both match purely on the
+ * Neither strategy hardcodes a class or method name, both match purely on the
  * enum's constant-name strings (see classifyEnum's note on why that survives
  * obfuscation/remapping where field-symbol matching doesn't), so the same jar
  * works across every loader (Forge/NeoForge/Fabric/Quilt) and true unmodified
@@ -112,14 +112,14 @@ public class ChatRestrictionTransformer implements ClassFileTransformer {
      * This distinction matters: obfuscators and remappers rename symbols (field
      * names, method names, class names) but leave arbitrary string literals
      * alone, since altering them could change program behavior. Confirmed
-     * empirically - raw vanilla obfuscated jars and Fabric's production
+     * empirically, raw vanilla obfuscated jars and Fabric's production
      * "Intermediary" remapping both rename the enum's field symbols to
      * meaningless IDs (e.g. "a", "field_28943"), but the constant-name strings
      * ("ENABLED", "DISABLED_BY_PROFILE", ...) survive untouched in both cases,
      * because they're read back at runtime via Enum.name()/.valueOf() and various
      * data-driven lookups that would break if the obfuscator touched them.
      * Matching on field symbols only ever worked in a Forge/official-mappings or
-     * Fabric-development (Yarn) environment - this matches everywhere instead.
+     * Fabric-development (Yarn) environment, this matches everywhere instead.
      */
     private EnumShape classifyEnum(ClassReader reader) {
         if (!"java/lang/Enum".equals(reader.getSuperName())) {
@@ -175,7 +175,7 @@ public class ChatRestrictionTransformer implements ClassFileTransformer {
     /**
      * Rewrites every ARETURN in the getter to swap a DISABLED_BY_PROFILE return
      * value for ENABLED. Inlined entirely with java.lang.Enum/String plus the
-     * enum's own compiler-generated valueOf(String) - deliberately calls no custom
+     * enum's own compiler-generated valueOf(String), deliberately calls no custom
      * helper class. Confirmed live against real Fabric: the patched class
      * (net.minecraft.class_310) loads through Fabric's KnotClassLoader, which is
      * isolated from whatever -javaagent added to the plain system classpath, so an
@@ -296,7 +296,7 @@ public class ChatRestrictionTransformer implements ClassFileTransformer {
 
     /**
      * The enum is usually only resolved (and thus first loaded) the moment the
-     * player opens chat for the first time - which can easily be after the class
+     * player opens chat for the first time, which can easily be after the class
      * holding the target method has already loaded and been passed through
      * untouched. Once we learn the enum's real name, retransform any already-loaded
      * class matching the given shape test, so we don't miss that case.
@@ -328,7 +328,7 @@ public class ChatRestrictionTransformer implements ClassFileTransformer {
                             instrumentation.retransformClasses(loadedClass);
                         }
                     } catch (Throwable ignored) {
-                        // Not introspectable right now - if it loads again fresh it's still covered by transform().
+                        // Not introspectable right now, if it loads again fresh it's still covered by transform().
                     }
                 }
             } catch (Throwable t) {
