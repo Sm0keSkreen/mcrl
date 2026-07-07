@@ -26,7 +26,7 @@ echo.
 echo Fetching mcrl.jar into %JAR_PATH% ...
 where curl >nul 2>nul
 if %ERRORLEVEL%==0 (
-    curl -L -o "%JAR_PATH%" "%JAR_URL%"
+    curl -fL -o "%JAR_PATH%" "%JAR_URL%"
 ) else (
     powershell -NoProfile -Command "Invoke-WebRequest -Uri '%JAR_URL%' -OutFile '%JAR_PATH%'"
 )

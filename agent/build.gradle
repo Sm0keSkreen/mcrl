@@ -24,9 +24,7 @@ java {
 def agentManifest = {
     attributes(
         'Premain-Class': 'mcrl.agent.McrlAgent',
-        'Agent-Class': 'mcrl.agent.McrlAgent',
-        'Can-Retransform-Classes': 'true',
-        'Can-Redefine-Classes': 'true'
+        'Agent-Class': 'mcrl.agent.McrlAgent'
     )
 }
 
