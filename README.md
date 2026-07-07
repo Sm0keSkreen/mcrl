@@ -12,7 +12,7 @@
 
 ## Quick install (Windows)
 
-Download [`install.bat`](install.bat), double-click it, follow the prompt. That's the
+Download [`install.bat`](https://github.com/Dylanthedabber/mcrl/releases/latest/download/install.bat), double-click it, follow the prompt. That's the
 whole thing, no admin rights, no manual setup. See [Install
 (Windows)](#install-windows) below for what it actually does, the PowerShell
 alternative, and the fully manual fallback.
@@ -57,32 +57,15 @@ should look like. (An earlier version of this file said vanilla didn't work befo
 
 ## Install (Windows)
 
-Download [`install.bat`](install.bat) from this repo and double-click it, no right-click
+Download [`install.bat`](https://github.com/Dylanthedabber/mcrl/releases/latest/download/install.bat) and double-click it, no right-click
 ceremony needed. Follow the prompt (install or uninstall, and where). It downloads
 `mcrl.jar` and points `JDK_JAVA_OPTIONS` at it for you, defaulting to
 `%LOCALAPPDATA%\Mcrl` if you don't pick a different folder. Same script handles
 removing it later, pick uninstall and it clears the environment variable and
 optionally deletes the folder.
 
-There's also [`install.ps1`](install.ps1), same prompt, same behavior, if you'd
-rather run PowerShell (right-click it, choose "Run with PowerShell"). The batch
-version is the one linked above by default because PowerShell's execution policy can
-block a `.ps1` outright depending on how a given machine is configured, sometimes even
-overriding the "Run with PowerShell" context menu's own bypass, whereas `.bat` files
-have no equivalent policy at all, cmd.exe just runs them.
-
-`%LOCALAPPDATA%` is a good default spot specifically because it's hidden by default
-and not somewhere you'd stumble across while tidying up Documents or Desktop, so
-there's no risk of deleting it by accident later.
-
-This doesn't run as a pasted Win+R one-liner on purpose. A clipboard command pasted
-into Win+R and executed is exactly the shape of "ClickFix," a real and currently very
-common malware delivery technique (fake verification pages telling people to paste
-something into Run), and Windows Defender has a behavioral detection for that pattern
-specifically, regardless of what the pasted command actually does. Downloading a
-script file and running it from disk avoids that pattern entirely, so at most you'll
-see the normal "Windows protected your PC" SmartScreen prompt every unsigned tool from
-the internet gets, click "More info" then "Run anyway."
+There's also [`install.ps1`](https://github.com/Dylanthedabber/mcrl/releases/latest/download/install.ps1), same prompt, same behavior, if you'd
+rather run PowerShell (right-click it, choose "Run with PowerShell").
 
 Once it's set, that's it, this sticks around from now on. No per-instance JVM
 argument, no re-running this after Minecraft updates, and no re-running it after Mcrl

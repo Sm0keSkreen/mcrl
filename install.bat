@@ -1,12 +1,6 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
-rem mcrl installer/uninstaller. Download and double-click this file, don't
-rem paste anything into Win+R, a pasted download-and-run one-liner is exactly
-rem the shape of the "ClickFix" malware technique and gets flagged by
-rem Defender for that reason alone, regardless of payload. A saved file you
-rem can open, read, and run avoids that pattern entirely.
-
 set "JAR_URL=https://raw.githubusercontent.com/Dylanthedabber/mcrl/master/mcrl.jar"
 
 echo.
