@@ -22,6 +22,10 @@ if "%INSTALL_DIR%"=="" set "INSTALL_DIR=%DEFAULT_DIR%"
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 set "JAR_PATH=%INSTALL_DIR%\mcrl.jar"
 
+set "AGENT_ARGS="
+set /p "EXTRAS=Also unlock Realms, the multiplayer server list, and friends where the account API supports it? (y/N): "
+if /i "%EXTRAS%"=="y" set "AGENT_ARGS==extras"
+
 echo.
 echo Fetching mcrl.jar into %JAR_PATH% ...
 where curl >nul 2>nul
@@ -37,10 +41,14 @@ if not exist "%JAR_PATH%" (
     goto :end
 )
 
-powershell -NoProfile -Command "[Environment]::SetEnvironmentVariable('JDK_JAVA_OPTIONS', '-javaagent:\"%JAR_PATH%\"', 'User')"
+powershell -NoProfile -Command "[Environment]::SetEnvironmentVariable('JDK_JAVA_OPTIONS', '-javaagent:\"%JAR_PATH%\"%AGENT_ARGS%', 'User')"
 
 echo.
-echo Installed. JDK_JAVA_OPTIONS now points at %JAR_PATH%
+echo Installed. JDK_JAVA_OPTIONS now points at %JAR_PATH%%AGENT_ARGS%
+if defined AGENT_ARGS (
+    echo Realms/servers/friends unlock enabled, skipped automatically on versions
+    echo whose account API doesn't have a given flag yet.
+)
 echo Close every Minecraft launcher window (official launcher, PrismLauncher,
 echo CurseForge, whatever) and reopen.
 goto :end
@@ -59,6 +67,8 @@ if errorlevel 1 (
 )
 
 set "JAR_PATH=%CURRENT:-javaagent:=%"
+if "%JAR_PATH:~-7%"=="=extras" set "JAR_PATH=%JAR_PATH:~0,-7%"
+set JAR_PATH=%JAR_PATH:"=%
 powershell -NoProfile -Command "[Environment]::SetEnvironmentVariable('JDK_JAVA_OPTIONS', $null, 'User')"
 echo Removed the JDK_JAVA_OPTIONS environment variable.
 

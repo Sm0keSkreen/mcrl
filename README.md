@@ -166,6 +166,24 @@ shape, the agent just won't find anything to patch. You'll see its install banne
 print but no "found... enum" or "patching..." lines, which is how you'd notice nothing
 happened.
 
+### Optional: Realms, servers, and friends
+
+Chat unlock is always on. Both install scripts also ask whether to unlock Realms, the
+multiplayer server list, and friends (where the account API has that flag), off by
+default. This patches a different target entirely: Mojang's `authlib` library, which
+unlike Minecraft's own classes is a plain, unobfuscated shared dependency with stable
+names across every loader and version, so it's matched by real class/method name
+instead of the shape-detection the chat patch needs. Enabling it manually means adding
+`=extras` after the jar path in whichever mechanism you're using, e.g.
+`-javaagent:"/path/to/mcrl.jar"=extras`.
+
+Two things worth knowing: it doesn't force `ACCEPT_FRIEND_INVITES` or
+`CHAT_FRIENDS_ONLY`, leaving those as your account actually reports them, matching No
+Chat Reports' own restraint there. And the account API's flag list itself has grown
+over time, friends support in particular is a recent addition, so on older Minecraft
+versions whichever flags aren't present yet get silently skipped rather than causing
+an error.
+
 ## Beta
 
 This is fresh and hasn't been run at any real scale yet, just checked against real

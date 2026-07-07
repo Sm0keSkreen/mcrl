@@ -136,7 +136,7 @@ if [ "$CHOICE" = "2" ]; then
                 FOUND=1
                 APP_JAR_PATH="${CURRENT_OVERRIDE#JDK_JAVA_OPTIONS=-javaagent:}"
                 APP_JAR_PATH="${APP_JAR_PATH#\"}"
-                APP_JAR_PATH="${APP_JAR_PATH%\"}"
+                APP_JAR_PATH="${APP_JAR_PATH%\"*}"
                 JAR_PATH="${JAR_PATH:-$APP_JAR_PATH}"
                 flatpak override --user --unset-env=JDK_JAVA_OPTIONS "$APP"
                 flatpak override --user --nofilesystem="$(dirname "$APP_JAR_PATH")" "$APP"
@@ -170,6 +170,12 @@ INSTALL_DIR="${INSTALL_DIR:-$DEFAULT_DIR}"
 mkdir -p "$INSTALL_DIR"
 JAR_PATH="$INSTALL_DIR/mcrl.jar"
 
+AGENT_ARGS=""
+read -r -p "Also unlock Realms, the multiplayer server list, and friends where the account API supports it? (y/N): " EXTRAS
+case "$EXTRAS" in
+    y|Y) AGENT_ARGS="=extras" ;;
+esac
+
 echo ""
 echo "Fetching mcrl.jar into $JAR_PATH ..."
 if command -v curl >/dev/null 2>&1; then
@@ -201,7 +207,7 @@ if is_macos; then
         <string>/bin/launchctl</string>
         <string>setenv</string>
         <string>JDK_JAVA_OPTIONS</string>
-        <string>-javaagent:"$JAR_PATH"</string>
+        <string>-javaagent:"$JAR_PATH"$AGENT_ARGS</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
@@ -214,7 +220,7 @@ PLIST
     NATIVE_NOTE="already active for this login session, no restart needed for it specifically"
 elif has_systemd_user; then
     mkdir -p "$(dirname "$ENV_D_FILE")"
-    echo "JDK_JAVA_OPTIONS=-javaagent:\"$JAR_PATH\"" > "$ENV_D_FILE"
+    echo "JDK_JAVA_OPTIONS=-javaagent:\"$JAR_PATH\"$AGENT_ARGS" > "$ENV_D_FILE"
     echo "Wrote $ENV_D_FILE (covers native, non-Flatpak launchers)."
     NATIVE_NOTE="systemd only reads environment.d at session start, so log out and back in"
 else
@@ -224,7 +230,7 @@ else
         {
             echo ""
             echo "$TAG_LINE"
-            echo "export JDK_JAVA_OPTIONS=\"-javaagent:\\\"$JAR_PATH\\\"\""
+            echo "export JDK_JAVA_OPTIONS=\"-javaagent:\\\"$JAR_PATH\\\"$AGENT_ARGS\""
         } >> "$RC_FILE"
         echo "Added JDK_JAVA_OPTIONS to $RC_FILE (covers native, non-Flatpak launchers)."
     else
@@ -237,13 +243,17 @@ FLATPAK_TARGETS="$(select_flatpak_targets)"
 if [ -n "$FLATPAK_TARGETS" ]; then
     while IFS= read -r APP; do
         [ -z "$APP" ] && continue
-        flatpak override --user --env=JDK_JAVA_OPTIONS="-javaagent:\"$JAR_PATH\"" "$APP"
+        flatpak override --user --env=JDK_JAVA_OPTIONS="-javaagent:\"$JAR_PATH\"$AGENT_ARGS" "$APP"
         flatpak override --user --filesystem="$INSTALL_DIR:ro" "$APP"
         echo "Set the Flatpak override for $APP."
     done <<< "$FLATPAK_TARGETS"
 fi
 
 echo ""
-echo "Installed. JDK_JAVA_OPTIONS now points at $JAR_PATH"
+echo "Installed. JDK_JAVA_OPTIONS now points at $JAR_PATH$AGENT_ARGS"
+if [ -n "$AGENT_ARGS" ]; then
+    echo "Realms/servers/friends unlock enabled (skipped automatically on versions"
+    echo "whose account API doesn't have a given flag yet, e.g. friends on older MC)."
+fi
 echo "For native launchers, $NATIVE_NOTE. Close every Minecraft launcher"
 echo "window and reopen either way."
