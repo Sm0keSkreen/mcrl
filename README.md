@@ -6,30 +6,39 @@ does and doesn't do" section below.
 
 It's a `-javaagent`, not a mod, so it attaches below whatever mod loader (or nothing)
 is running, and matches its target by shape rather than by class/method name - so the
-same jar works across loaders without a rebuild per loader. Two real shapes exist
-depending on the game's era, and this agent handles both:
+same jar works across loaders, and on unmodified vanilla, without a rebuild per loader.
+Two real shapes exist depending on the game's era, and this agent handles both:
 
-- **1.19 - 1.21.11** (Forge/NeoForge: `Minecraft.getChatStatus()`, Fabric/Quilt:
-  `MinecraftClient.getChatRestriction()`): a single enum with constants `ENABLED`,
-  `DISABLED_BY_OPTIONS`, `DISABLED_BY_PROFILE`, `DISABLED_BY_LAUNCHER`, matched by that
-  constant set regardless of class/method name.
+- **1.19 - 1.21.11**: a single enum with constants `ENABLED`, `DISABLED_BY_OPTIONS`,
+  `DISABLED_BY_PROFILE`, `DISABLED_BY_LAUNCHER`.
 - **26.1+**: Mojang restructured this into a `ChatAbilities` object built from a set of
   `ChatRestriction` reasons (no more `ENABLED` constant - "no restriction" is just an
   empty set). Matched by the fluent `addRestriction(ChatRestriction) -> same type`
   method shape instead.
 
-Mojang also removed all obfuscation from the Java client starting with 26.1, so for
-that era and later this agent works on **unmodified vanilla too**, not just under a mod
-loader - there's no deobfuscation step left to depend on. For 1.19 - 1.21.11, a mod
-loader (Forge/NeoForge/Fabric/Quilt) is still required, since true vanilla ships those
-versions obfuscated and the readable enum names this agent looks for don't exist in
-that bytecode at all.
+The key design point, found the hard way (see below): every class/method/field
+*symbol* name in the game gets renamed depending on context - Mojang's own obfuscation
+in the raw vanilla jar, Forge/NeoForge's official-Mojang-mapping remap, Fabric/Quilt's
+"Intermediary" remap (a *different*, synthetic, non-human-readable scheme from the
+Yarn names you see in a dev environment - production Fabric/Quilt never uses those).
+So this agent doesn't match on any symbol name at all. Instead it reads the literal
+string arguments baked into the enum's own `<clinit>` (the `"ENABLED"`,
+`"DISABLED_BY_PROFILE"`, etc. that every enum constant passes to its constructor) -
+those survive every renaming scheme unchanged, because obfuscators rename symbols, not
+arbitrary string literals, and the game itself depends on these particular strings
+staying intact for `Enum.name()`/`valueOf()` and other data-driven lookups to work.
+That one property is what makes a single jar cover vanilla and every loader at once.
 
-**Verified**, not assumed: every one of the 24 release versions from 1.19 through
-1.21.11, plus 26.1 and 26.2, was checked against real client bytecode (old versions
-remapped using Mojang's own published mappings to reconstruct what Forge/Fabric expose;
-26.x checked directly since it ships unobfuscated) and confirmed to match the shape
-this agent looks for.
+**Verified against real bytecode, not assumed:** every one of the 24 release versions
+from 1.19 through 1.21.11, plus 26.1 and 26.2, checked directly against the *raw,
+unmodified* client jar Mojang actually ships (no remapping applied at all) - confirming
+true vanilla works for the entire version range, not just 26.x. Additionally
+cross-checked against real Fabric Loader "Intermediary" production bytecode
+(remapped with Fabric's own `tiny-remapper` tool and official mappings, not a
+hand-rolled approximation) to confirm Fabric/Quilt production environments match too.
+An earlier version of this doc claimed vanilla didn't work pre-26.1 - that was wrong,
+caused by a flawed test (`grep` silently skipping binary files without `-a`), corrected
+once the mistake was found by testing more rigorously.
 
 ## Install (Windows)
 
@@ -45,8 +54,8 @@ this agent looks for.
    PrismLauncher, CurseForge, whatever), then reopen and launch normally.
 
 That's it. This applies automatically from now on - no per-instance JVM argument,
-no re-running this after launcher/game updates. Works for any Minecraft Java version
-and any loader (Forge, NeoForge, Fabric, Quilt, vanilla).
+no re-running this after launcher/game updates. Works for any Minecraft Java version,
+any loader (Forge, NeoForge, Fabric, Quilt), and unmodified vanilla.
 
 If your Windows account's Documents folder is redirected by OneDrive (some setups
 move it to `...\OneDrive\Documents`), point the path in step 2 at wherever the folder
@@ -87,10 +96,15 @@ export JDK_JAVA_OPTIONS="-javaagent:/path/to/Mcrl/mcrl.jar"
 
 ## Version coverage (verified against real bytecode, not assumed)
 
-| Range | Shape matched | Works on vanilla? | Works under Forge/NeoForge/Fabric/Quilt? |
-|---|---|---|---|
-| 1.19 - 1.21.11 (24 releases) | legacy enum getter | No (ships obfuscated; readable names don't exist in the raw jar) | Yes |
-| 26.1, 26.2 | modern `ChatAbilities` builder | Yes (ships unobfuscated) | Yes |
+| Range | Shape matched | Vanilla | Forge / NeoForge | Fabric / Quilt |
+|---|---|---|---|---|
+| 1.19 - 1.21.11 (24 releases) | legacy enum getter | Yes | Yes | Yes |
+| 26.1, 26.2 | modern `ChatAbilities` builder | Yes | Yes* | Yes* |
+
+\* 26.x mod loader support depends on those projects having caught up to a
+version-only-months-old release; the agent itself doesn't care whether a loader is
+present at all, so this is really "does a loader for 26.x exist yet", not a limitation
+of this agent.
 
 If a future version restructures the feature again in a way that matches neither
 shape, the agent simply never finds anything to patch - it prints its install banner

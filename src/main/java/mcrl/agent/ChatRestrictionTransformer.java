@@ -3,7 +3,6 @@ package mcrl.agent;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -35,9 +34,11 @@ import java.util.concurrent.atomic.AtomicReference;
  * "addRestriction(ChatRestriction) -> same builder type" method whenever it's
  * called with DISABLED_BY_PROFILE, so that reason never gets recorded.
  *
- * Neither strategy hardcodes a class or method name - both match purely on enum
- * constant shape, so the same jar works across every loader (Forge/NeoForge/
- * Fabric/Quilt/vanilla) for whichever era of the game is actually running.
+ * Neither strategy hardcodes a class or method name - both match purely on the
+ * enum's constant-name strings (see classifyEnum's note on why that survives
+ * obfuscation/remapping where field-symbol matching doesn't), so the same jar
+ * works across every loader (Forge/NeoForge/Fabric/Quilt) and true unmodified
+ * vanilla, for whichever era of the game is actually running.
  */
 public class ChatRestrictionTransformer implements ClassFileTransformer {
 
@@ -99,28 +100,52 @@ public class ChatRestrictionTransformer implements ClassFileTransformer {
 
     private enum EnumShape { NONE, LEGACY, MODERN }
 
+    /**
+     * Identifies the enum by the constant-name strings baked into its own
+     * &lt;clinit&gt; (the argument every enum constant passes to the implicit
+     * Enum(String name, int ordinal) constructor) rather than by the enum
+     * field's own bytecode symbol.
+     *
+     * This distinction matters: obfuscators and remappers rename symbols (field
+     * names, method names, class names) but leave arbitrary string literals
+     * alone, since altering them could change program behavior. Confirmed
+     * empirically - raw vanilla obfuscated jars and Fabric's production
+     * "Intermediary" remapping both rename the enum's field symbols to
+     * meaningless IDs (e.g. "a", "field_28943"), but the constant-name strings
+     * ("ENABLED", "DISABLED_BY_PROFILE", ...) survive untouched in both cases,
+     * because they're read back at runtime via Enum.name()/.valueOf() and various
+     * data-driven lookups that would break if the obfuscator touched them.
+     * Matching on field symbols only ever worked in a Forge/official-mappings or
+     * Fabric-development (Yarn) environment - this matches everywhere instead.
+     */
     private EnumShape classifyEnum(ClassReader reader) {
         if (!"java/lang/Enum".equals(reader.getSuperName())) {
             return EnumShape.NONE;
         }
-        String selfDescriptor = "L" + reader.getClassName() + ";";
-        Set<String> constants = new HashSet<>();
+        Set<String> constantNames = new HashSet<>();
         reader.accept(new ClassVisitor(Opcodes.ASM9) {
             @Override
-            public FieldVisitor visitField(int access, String name, String descriptor,
-                                            String signature, Object value) {
-                if ((access & Opcodes.ACC_ENUM) != 0 && selfDescriptor.equals(descriptor)) {
-                    constants.add(name);
+            public MethodVisitor visitMethod(int access, String name, String descriptor,
+                                              String signature, String[] exceptions) {
+                if (!"<clinit>".equals(name)) {
+                    return null;
                 }
-                return null;
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitLdcInsn(Object value) {
+                        if (value instanceof String) {
+                            constantNames.add((String) value);
+                        }
+                    }
+                };
             }
-        }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
 
-        if (constants.containsAll(LEGACY_REQUIRED)) {
+        if (constantNames.containsAll(LEGACY_REQUIRED)) {
             return EnumShape.LEGACY;
         }
-        if (constants.contains("DISABLED_BY_PROFILE") && constants.contains("DISABLED_BY_LAUNCHER")
-                && !constants.contains("ENABLED")) {
+        if (constantNames.contains("DISABLED_BY_PROFILE") && constantNames.contains("DISABLED_BY_LAUNCHER")
+                && !constantNames.contains("ENABLED")) {
             return EnumShape.MODERN;
         }
         return EnumShape.NONE;
