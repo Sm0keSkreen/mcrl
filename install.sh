@@ -6,9 +6,15 @@ set -u
 JAR_URL="https://github.com/Sm0keSkreen/mcrl/releases/latest/download/mcrl.jar"
 DEFAULT_DIR="$HOME/.local/share/mcrl"
 TAG_LINE="# mcrl (added by install.sh)"
+ENV_D_FILE="$HOME/.config/environment.d/mcrl.conf"
 
-# Known Flatpak Minecraft launchers; each needs its own explicit env override.
+# Known Flatpak Minecraft launchers, pre-selected by default in the picker below.
 KNOWN_FLATPAK_APPS="org.prismlauncher.PrismLauncher org.polymc.PolyMC com.modrinth.ModrinthApp com.mojang.Minecraft"
+
+# environment.d is only loaded by systemd's per-user manager (Linux only).
+has_systemd_user() {
+    [ -d /run/systemd/system ]
+}
 
 detect_rc_file() {
     case "$(basename "${SHELL:-}")" in
@@ -18,15 +24,47 @@ detect_rc_file() {
     esac
 }
 
-is_flatpak_app_installed() {
-    command -v flatpak >/dev/null 2>&1 && flatpak list --app --columns=application 2>/dev/null | grep -qx "$1"
+list_installed_flatpak_apps() {
+    command -v flatpak >/dev/null 2>&1 && flatpak list --app --columns=application,name 2>/dev/null
 }
 
-installed_flatpak_targets() {
-    local app
-    for app in $KNOWN_FLATPAK_APPS; do
-        if is_flatpak_app_installed "$app"; then
-            echo "$app"
+# Numbered picker over every installed Flatpak app; Enter defaults to the known launchers.
+select_flatpak_targets() {
+    local app name mark i idx picks
+    local -a apps=() names=()
+    while IFS=$'\t' read -r app name; do
+        [ -z "$app" ] && continue
+        apps+=("$app")
+        names+=("$name")
+    done < <(list_installed_flatpak_apps)
+
+    [ "${#apps[@]}" -eq 0 ] && return
+
+    echo "" >&2
+    echo "Installed Flatpak apps:" >&2
+    for i in "${!apps[@]}"; do
+        mark=""
+        case " $KNOWN_FLATPAK_APPS " in
+            *" ${apps[$i]} "*) mark=" (known launcher)" ;;
+        esac
+        printf "  [%d] %s - %s%s\n" "$((i + 1))" "${apps[$i]}" "${names[$i]}" "$mark" >&2
+    done
+    echo "" >&2
+    read -r -p "Numbers to cover (space-separated, Enter for known launchers only): " picks
+
+    if [ -z "$picks" ]; then
+        for i in "${!apps[@]}"; do
+            case " $KNOWN_FLATPAK_APPS " in
+                *" ${apps[$i]} "*) echo "${apps[$i]}" ;;
+            esac
+        done
+        return
+    fi
+
+    for i in $picks; do
+        idx=$((i - 1))
+        if [ "$idx" -ge 0 ] && [ "$idx" -lt "${#apps[@]}" ]; then
+            echo "${apps[$idx]}"
         fi
     done
 }
@@ -46,41 +84,43 @@ if [ "$CHOICE" = "2" ]; then
     FOUND=0
     JAR_PATH=""
 
+    if [ -f "$ENV_D_FILE" ]; then
+        LINE=$(grep -o 'javaagent:[^"]*mcrl\.jar' "$ENV_D_FILE" | head -n1 || true)
+        if [ -n "$LINE" ]; then
+            FOUND=1
+            JAR_PATH="${LINE#javaagent:}"
+            rm -f "$ENV_D_FILE"
+            echo "Removed $ENV_D_FILE."
+        fi
+    fi
+
     if [ -f "$RC_FILE" ]; then
         LINE=$(grep -o 'javaagent:[^"]*mcrl\.jar' "$RC_FILE" | head -n1 || true)
         if [ -n "$LINE" ]; then
             FOUND=1
-            JAR_PATH="${LINE#javaagent:}"
+            JAR_PATH="${JAR_PATH:-${LINE#javaagent:}}"
             grep -vx -e "$TAG_LINE" -e 'export JDK_JAVA_OPTIONS="-javaagent:.*mcrl\.jar"' "$RC_FILE" > "$RC_FILE.mcrl_tmp" \
                 && mv "$RC_FILE.mcrl_tmp" "$RC_FILE"
             echo "Removed the JDK_JAVA_OPTIONS line from $RC_FILE."
         fi
     fi
 
-    for APP in $(installed_flatpak_targets); do
-        CURRENT_OVERRIDE=$(flatpak override --user --show "$APP" 2>/dev/null | grep '^JDK_JAVA_OPTIONS=' || true)
-        if echo "$CURRENT_OVERRIDE" | grep -q 'mcrl\.jar'; then
-            FOUND=1
-            if [ -z "$JAR_PATH" ]; then
-                JAR_PATH="${CURRENT_OVERRIDE#JDK_JAVA_OPTIONS=-javaagent:}"
+    if command -v flatpak >/dev/null 2>&1; then
+        for APP in $(flatpak list --app --columns=application 2>/dev/null); do
+            CURRENT_OVERRIDE=$(flatpak override --user --show "$APP" 2>/dev/null | grep '^JDK_JAVA_OPTIONS=' || true)
+            if echo "$CURRENT_OVERRIDE" | grep -q 'mcrl\.jar'; then
+                FOUND=1
+                APP_JAR_PATH="${CURRENT_OVERRIDE#JDK_JAVA_OPTIONS=-javaagent:}"
+                JAR_PATH="${JAR_PATH:-$APP_JAR_PATH}"
+                flatpak override --user --unset-env=JDK_JAVA_OPTIONS "$APP"
+                flatpak override --user --nofilesystem="$(dirname "$APP_JAR_PATH")" "$APP"
+                echo "Removed the Flatpak override for $APP."
             fi
-            flatpak override --user --unset-env=JDK_JAVA_OPTIONS "$APP"
-            echo "Removed the Flatpak override for $APP."
-        fi
-    done
-
-    read -r -p "Any other Flatpak launcher app ID to check (Enter to skip): " EXTRA_APP
-    if [ -n "$EXTRA_APP" ] && is_flatpak_app_installed "$EXTRA_APP"; then
-        CURRENT_OVERRIDE=$(flatpak override --user --show "$EXTRA_APP" 2>/dev/null | grep '^JDK_JAVA_OPTIONS=' || true)
-        if echo "$CURRENT_OVERRIDE" | grep -q 'mcrl\.jar'; then
-            FOUND=1
-            flatpak override --user --unset-env=JDK_JAVA_OPTIONS "$EXTRA_APP"
-            echo "Removed the Flatpak override for $EXTRA_APP."
-        fi
+        done
     fi
 
     if [ "$FOUND" = "0" ]; then
-        echo "Didn't find an mcrl install (no shell rc entry, no matching Flatpak override)."
+        echo "Didn't find an mcrl install (no environment.d entry, no shell rc entry, no matching Flatpak override)."
         echo "Nothing to do."
         exit 0
     fi
@@ -121,38 +161,38 @@ if [ ! -f "$JAR_PATH" ]; then
     exit 1
 fi
 
-RC_FILE="$(detect_rc_file)"
-touch "$RC_FILE"
-if ! grep -qx "$TAG_LINE" "$RC_FILE"; then
-    {
-        echo ""
-        echo "$TAG_LINE"
-        echo "export JDK_JAVA_OPTIONS=\"-javaagent:$JAR_PATH\""
-    } >> "$RC_FILE"
-    echo "Added JDK_JAVA_OPTIONS to $RC_FILE (covers native, non-Flatpak launchers)."
+if has_systemd_user; then
+    mkdir -p "$(dirname "$ENV_D_FILE")"
+    echo "JDK_JAVA_OPTIONS=\"-javaagent:$JAR_PATH\"" > "$ENV_D_FILE"
+    echo "Wrote $ENV_D_FILE (covers native, non-Flatpak launchers)."
+    NATIVE_NOTE="systemd only reads environment.d at session start, so log out and back in"
 else
-    echo "$RC_FILE already has an mcrl entry, leaving it as-is."
-fi
-
-FLATPAK_TARGETS="$(installed_flatpak_targets)"
-if [ -n "$FLATPAK_TARGETS" ]; then
-    for APP in $FLATPAK_TARGETS; do
-        flatpak override --user --env=JDK_JAVA_OPTIONS="-javaagent:$JAR_PATH" "$APP"
-        echo "Also set the Flatpak override for $APP (Flatpak apps don't see your shell's environment otherwise)."
-    done
-fi
-
-read -r -p "Any other Flatpak launcher app ID to cover (Enter to skip): " EXTRA_APP
-if [ -n "$EXTRA_APP" ]; then
-    if is_flatpak_app_installed "$EXTRA_APP"; then
-        flatpak override --user --env=JDK_JAVA_OPTIONS="-javaagent:$JAR_PATH" "$EXTRA_APP"
-        echo "Also set the Flatpak override for $EXTRA_APP."
+    RC_FILE="$(detect_rc_file)"
+    touch "$RC_FILE"
+    if ! grep -qx "$TAG_LINE" "$RC_FILE"; then
+        {
+            echo ""
+            echo "$TAG_LINE"
+            echo "export JDK_JAVA_OPTIONS=\"-javaagent:$JAR_PATH\""
+        } >> "$RC_FILE"
+        echo "Added JDK_JAVA_OPTIONS to $RC_FILE (covers native, non-Flatpak launchers)."
     else
-        echo "Didn't find a Flatpak app installed with ID $EXTRA_APP, skipped."
+        echo "$RC_FILE already has an mcrl entry, leaving it as-is."
     fi
+    NATIVE_NOTE="open a new terminal so $RC_FILE gets re-read"
+fi
+
+FLATPAK_TARGETS="$(select_flatpak_targets)"
+if [ -n "$FLATPAK_TARGETS" ]; then
+    while IFS= read -r APP; do
+        [ -z "$APP" ] && continue
+        flatpak override --user --env=JDK_JAVA_OPTIONS="-javaagent:$JAR_PATH" "$APP"
+        flatpak override --user --filesystem="$INSTALL_DIR:ro" "$APP"
+        echo "Set the Flatpak override for $APP."
+    done <<< "$FLATPAK_TARGETS"
 fi
 
 echo ""
 echo "Installed. JDK_JAVA_OPTIONS now points at $JAR_PATH"
-echo "Open a new terminal (so $RC_FILE gets re-read), close every Minecraft"
-echo "launcher window, and reopen."
+echo "For native launchers, $NATIVE_NOTE. Close every Minecraft launcher"
+echo "window and reopen either way."
