@@ -14,7 +14,7 @@ A JVM agent that clears the Microsoft/Xbox account-level "chat disabled" check o
 Minecraft Java client. Works on vanilla and every loader, one jar, no rebuild per
 version. Doesn't touch chat signing or reporting, that's a separate system (see
 [What it actually touches](#what-it-actually-touches)).
-### this was coded with the help of ai, though I looked over every part of this project, and came up with every desgin chose myself.
+### This was coded with the help of ai, though I looked over every part of this project, and came up with every desgin chose myself.
 
 ## Install
 
