@@ -112,18 +112,6 @@ one-line notice print to the console of whatever else you run.
 The agent itself needs Java 8 or newer to even load, which is about as broad as
 Minecraft's own runtime requirements get across every version.
 
-### Version coverage
-
-| Range | Shape matched | Vanilla | Forge / NeoForge | Fabric / Quilt |
-|---|---|---|---|---|
-| 1.19 through 1.21.11 (24 releases) | legacy enum getter | Yes | Yes | Yes |
-| 26.1, 26.2 | modern `ChatAbilities` builder | Yes | Yes* | Yes* |
-
-\* Whether a Forge/NeoForge or Fabric/Quilt build for 26.x actually exists yet is
-really a question about those projects catching up to a version that's only months
-old, not a limitation of this agent. It doesn't care whether a loader is present at
-all.
-
 If some future version restructures the feature again in a way that matches neither
 shape, the agent just won't find anything to patch. You'll see its install banner
 print but no "found... enum" or "patching..." lines, which is how you'd notice nothing
@@ -131,8 +119,8 @@ happened.
 
 ## Beta
 
-This is fresh and hasn't been run at any real scale yet, just tested against the
-version/loader matrix above. If you hit anything off, a version or loader combo that
+This is fresh and hasn't been run at any real scale yet, just checked against real
+bytecode as described above. If you hit anything off, a version or loader combo that
 doesn't get patched, chat still blocked after install, anything weird, open an issue
 on the repo or reach out. Real reports from real use are the most useful thing right
 now.
