@@ -30,6 +30,96 @@ detect_rc_file() {
     esac
 }
 
+# Read-only: prints the currently-configured jar path and returns 1 if none is found.
+find_existing_jar_path() {
+    local rc_file line extracted app override
+    rc_file="$(detect_rc_file)"
+
+    if [ -f "$LAUNCH_AGENT_PLIST" ]; then
+        line=$(grep -o 'javaagent:.*mcrl\.jar' "$LAUNCH_AGENT_PLIST" | head -n1 || true)
+        if [ -n "$line" ]; then
+            extracted="${line#javaagent:}"
+            echo "${extracted#\"}"
+            return 0
+        fi
+    fi
+
+    if [ -f "$ENV_D_FILE" ]; then
+        line=$(grep -o 'javaagent:.*mcrl\.jar' "$ENV_D_FILE" | head -n1 || true)
+        if [ -n "$line" ]; then
+            extracted="${line#javaagent:}"
+            echo "${extracted#\"}"
+            return 0
+        fi
+    fi
+
+    if [ -f "$rc_file" ]; then
+        line=$(grep -o 'javaagent:.*mcrl\.jar' "$rc_file" | head -n1 || true)
+        if [ -n "$line" ]; then
+            extracted="${line#javaagent:}"
+            extracted="${extracted#\\}"
+            echo "${extracted#\"}"
+            return 0
+        fi
+    fi
+
+    if command -v flatpak >/dev/null 2>&1; then
+        for app in $(flatpak list --app --columns=application 2>/dev/null); do
+            override=$(flatpak override --user --show "$app" 2>/dev/null | grep '^JDK_JAVA_OPTIONS=' || true)
+            if echo "$override" | grep -q 'mcrl\.jar'; then
+                extracted="${override#JDK_JAVA_OPTIONS=-javaagent:}"
+                extracted="${extracted#\"}"
+                echo "${extracted%\"*}"
+                return 0
+            fi
+        done
+    fi
+
+    return 1
+}
+
+download_jar() {
+    local target="$1"
+    echo ""
+    echo "Fetching mcrl.jar into $target ..."
+    if command -v curl >/dev/null 2>&1; then
+        curl -fL -o "$target" "$JAR_URL"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -O "$target" "$JAR_URL"
+    else
+        echo "Need curl or wget to download the jar, neither was found."
+        exit 1
+    fi
+    if [ ! -f "$target" ]; then
+        echo ""
+        echo "Download failed, mcrl.jar isn't at $target."
+        exit 1
+    fi
+}
+
+# Prompts for the three optional toggles and writes config.json into the given directory.
+prompt_and_write_config() {
+    local target_dir="$1" answer extras_bool telemetry_bool profanity_bool
+
+    read -r -p "Also unlock Realms, the multiplayer server list, and friends where the account API supports it? (y/N): " answer
+    case "$answer" in y|Y) extras_bool=true ;; *) extras_bool=false ;; esac
+
+    read -r -p "Allow telemetry reporting to Mojang? (y/N): " answer
+    case "$answer" in y|Y) telemetry_bool=true ;; *) telemetry_bool=false ;; esac
+
+    read -r -p "Allow the in-game chat profanity filter? (y/N): " answer
+    case "$answer" in y|Y) profanity_bool=true ;; *) profanity_bool=false ;; esac
+
+    cat > "$target_dir/config.json" <<CONFIGJSON
+{
+  "extras": $extras_bool,
+  "allowTelemetry": $telemetry_bool,
+  "allowProfanityFilter": $profanity_bool
+}
+CONFIGJSON
+    echo "Wrote $target_dir/config.json."
+}
+
 list_installed_flatpak_apps() {
     command -v flatpak >/dev/null 2>&1 && flatpak list --app --columns=application,name 2>/dev/null
 }
@@ -81,7 +171,37 @@ echo ""
 echo "What would you like to do?"
 echo "  [1] Install (default)"
 echo "  [2] Uninstall"
-read -r -p "Choose 1 or 2: " CHOICE
+echo "  [3] Reconfigure (change Realms/telemetry/profanity choices)"
+echo "  [4] Upgrade (re-download the jar, keep everything else)"
+read -r -p "Choose 1-4: " CHOICE
+
+if [ "$CHOICE" = "3" ]; then
+    echo ""
+    JAR_PATH="$(find_existing_jar_path || true)"
+    if [ -z "$JAR_PATH" ]; then
+        echo "Didn't find an existing mcrl install to reconfigure. Run install first."
+        exit 1
+    fi
+    echo "Found existing install at $JAR_PATH"
+    echo ""
+    prompt_and_write_config "$(dirname "$JAR_PATH")"
+    exit 0
+fi
+
+if [ "$CHOICE" = "4" ]; then
+    echo ""
+    JAR_PATH="$(find_existing_jar_path || true)"
+    if [ -z "$JAR_PATH" ]; then
+        echo "Didn't find an existing mcrl install to upgrade. Run install first."
+        exit 1
+    fi
+    echo "Found existing install at $JAR_PATH"
+    download_jar "$JAR_PATH"
+    echo ""
+    echo "Upgraded $JAR_PATH. Config and environment setup unchanged."
+    echo "Close every Minecraft launcher window and reopen."
+    exit 0
+fi
 
 if [ "$CHOICE" = "2" ]; then
     echo ""
@@ -154,7 +274,7 @@ if [ "$CHOICE" = "2" ]; then
     TARGET_DIR="${JAR_PATH:+$(dirname "$JAR_PATH")}"
     TARGET_DIR="${TARGET_DIR:-$DEFAULT_DIR}"
     if [ -d "$TARGET_DIR" ]; then
-        read -r -p "Also delete $TARGET_DIR ? (y/N): " REMOVE
+        read -r -p "Also delete $TARGET_DIR (jar and config.json)? (y/N): " REMOVE
         case "$REMOVE" in
             y|Y) rm -rf "$TARGET_DIR"; echo "Deleted $TARGET_DIR." ;;
         esac
@@ -170,28 +290,10 @@ INSTALL_DIR="${INSTALL_DIR:-$DEFAULT_DIR}"
 mkdir -p "$INSTALL_DIR"
 JAR_PATH="$INSTALL_DIR/mcrl.jar"
 
-AGENT_ARGS=""
-read -r -p "Also unlock Realms, the multiplayer server list, and friends where the account API supports it? (y/N): " EXTRAS
-case "$EXTRAS" in
-    y|Y) AGENT_ARGS="=extras" ;;
-esac
-
 echo ""
-echo "Fetching mcrl.jar into $JAR_PATH ..."
-if command -v curl >/dev/null 2>&1; then
-    curl -fL -o "$JAR_PATH" "$JAR_URL"
-elif command -v wget >/dev/null 2>&1; then
-    wget -O "$JAR_PATH" "$JAR_URL"
-else
-    echo "Need curl or wget to download the jar, neither was found."
-    exit 1
-fi
+prompt_and_write_config "$INSTALL_DIR"
 
-if [ ! -f "$JAR_PATH" ]; then
-    echo ""
-    echo "Download failed, mcrl.jar isn't at $JAR_PATH."
-    exit 1
-fi
+download_jar "$JAR_PATH"
 
 if is_macos; then
     mkdir -p "$(dirname "$LAUNCH_AGENT_PLIST")"
@@ -207,7 +309,7 @@ if is_macos; then
         <string>/bin/launchctl</string>
         <string>setenv</string>
         <string>JDK_JAVA_OPTIONS</string>
-        <string>-javaagent:"$JAR_PATH"$AGENT_ARGS</string>
+        <string>-javaagent:"$JAR_PATH"</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
@@ -220,7 +322,7 @@ PLIST
     NATIVE_NOTE="already active for this login session, no restart needed for it specifically"
 elif has_systemd_user; then
     mkdir -p "$(dirname "$ENV_D_FILE")"
-    echo "JDK_JAVA_OPTIONS=-javaagent:\"$JAR_PATH\"$AGENT_ARGS" > "$ENV_D_FILE"
+    echo "JDK_JAVA_OPTIONS=-javaagent:\"$JAR_PATH\"" > "$ENV_D_FILE"
     echo "Wrote $ENV_D_FILE (covers native, non-Flatpak launchers)."
     NATIVE_NOTE="systemd only reads environment.d at session start, so log out and back in"
 else
@@ -230,7 +332,7 @@ else
         {
             echo ""
             echo "$TAG_LINE"
-            echo "export JDK_JAVA_OPTIONS=\"-javaagent:\\\"$JAR_PATH\\\"$AGENT_ARGS\""
+            echo "export JDK_JAVA_OPTIONS=\"-javaagent:\\\"$JAR_PATH\\\"\""
         } >> "$RC_FILE"
         echo "Added JDK_JAVA_OPTIONS to $RC_FILE (covers native, non-Flatpak launchers)."
     else
@@ -243,17 +345,15 @@ FLATPAK_TARGETS="$(select_flatpak_targets)"
 if [ -n "$FLATPAK_TARGETS" ]; then
     while IFS= read -r APP; do
         [ -z "$APP" ] && continue
-        flatpak override --user --env=JDK_JAVA_OPTIONS="-javaagent:\"$JAR_PATH\"$AGENT_ARGS" "$APP"
+        flatpak override --user --env=JDK_JAVA_OPTIONS="-javaagent:\"$JAR_PATH\"" "$APP"
         flatpak override --user --filesystem="$INSTALL_DIR:ro" "$APP"
         echo "Set the Flatpak override for $APP."
     done <<< "$FLATPAK_TARGETS"
 fi
 
 echo ""
-echo "Installed. JDK_JAVA_OPTIONS now points at $JAR_PATH$AGENT_ARGS"
-if [ -n "$AGENT_ARGS" ]; then
-    echo "Realms/servers/friends unlock enabled (skipped automatically on versions"
-    echo "whose account API doesn't have a given flag yet, e.g. friends on older MC)."
-fi
+echo "Installed. JDK_JAVA_OPTIONS now points at $JAR_PATH"
+echo "Options are read from $INSTALL_DIR/config.json at game launch; rerun this script"
+echo "and choose Reconfigure to change them without reinstalling."
 echo "For native launchers, $NATIVE_NOTE. Close every Minecraft launcher"
 echo "window and reopen either way."

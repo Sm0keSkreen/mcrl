@@ -18,23 +18,33 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-// Unlocks Realms/servers/friends by patching authlib's UserApiService$UserProperties.properties(); unobfuscated, so matches by real name.
+// Adjusts account flags by patching authlib's UserApiService$UserProperties.properties(); unobfuscated, so matches by real name.
 public class AccountFlagsTransformer implements ClassFileTransformer {
 
     private static final String USER_PROPERTIES = "com/mojang/authlib/minecraft/UserApiService$UserProperties";
     private static final String USER_FLAG = "com/mojang/authlib/minecraft/UserApiService$UserFlag";
     private static final String TARGET_DESCRIPTOR = "()L" + USER_PROPERTIES + ";";
-    private static final List<String> DESIRED_FLAGS =
+    private static final List<String> EXTRAS_FLAGS =
             Arrays.asList("SERVERS_ALLOWED", "REALMS_ALLOWED", "FRIENDS_ENABLED");
+    private static final List<String> TELEMETRY_FLAGS =
+            Arrays.asList("TELEMETRY_ENABLED", "OPTIONAL_TELEMETRY_AVAILABLE");
+    private static final List<String> PROFANITY_FLAGS = Arrays.asList("PROFANITY_FILTER_ENABLED");
     // UserProperties gained a second (bannedScopes) constructor param sometime after MC 1.19; both
     // shapes are still in use across the versions this agent targets, so both must be handled.
     private static final String CTOR_FLAGS_ONLY = "(Ljava/util/Set;)V";
     private static final String CTOR_FLAGS_AND_BANS = "(Ljava/util/Set;Ljava/util/Map;)V";
 
     private final ConcurrentHashMap<ClassLoader, AccountApiShape> shapeCache = new ConcurrentHashMap<>();
+    private final boolean extras;
+    private final boolean blockTelemetry;
+    private final boolean blockProfanityFilter;
     private final boolean verbose;
 
-    public AccountFlagsTransformer(boolean verbose) {
+    public AccountFlagsTransformer(boolean extras, boolean blockTelemetry, boolean blockProfanityFilter,
+                                    boolean verbose) {
+        this.extras = extras;
+        this.blockTelemetry = blockTelemetry;
+        this.blockProfanityFilter = blockProfanityFilter;
         this.verbose = verbose;
     }
 
@@ -54,7 +64,7 @@ public class AccountFlagsTransformer implements ClassFileTransformer {
                 return null;
             }
             AccountApiShape shape = detectShape(loader);
-            if (shape == null || shape.flagsToForce.isEmpty()) {
+            if (shape == null || (shape.flagsToForce.isEmpty() && shape.flagsToStrip.isEmpty())) {
                 return null;
             }
             return patchPropertiesGetter(reader, className, loader, shape);
@@ -84,32 +94,52 @@ public class AccountFlagsTransformer implements ClassFileTransformer {
 
     private static final class AccountApiShape {
         final List<String> flagsToForce;
+        final List<String> flagsToStrip;
         final String constructorDescriptor;
 
-        AccountApiShape(List<String> flagsToForce, String constructorDescriptor) {
+        AccountApiShape(List<String> flagsToForce, List<String> flagsToStrip, String constructorDescriptor) {
             this.flagsToForce = flagsToForce;
+            this.flagsToStrip = flagsToStrip;
             this.constructorDescriptor = constructorDescriptor;
         }
     }
 
-    // Reads real UserFlag/UserProperties bytes (never a real class load) to see which of
-    // DESIRED_FLAGS exist and which constructor shape is present; both drift across MC versions.
+    // Reads real UserFlag/UserProperties bytes (never a real class load) to see which flags exist
+    // and which constructor shape is present; both drift across MC versions.
     private AccountApiShape detectShape(ClassLoader loader) {
         return shapeCache.computeIfAbsent(loader, l -> {
-            List<String> flagsToForce = detectAvailableFlags(l);
+            Set<String> presentFlags = detectPresentFlags(l);
             String constructorDescriptor = detectConstructorDescriptor(l);
             if (constructorDescriptor == null) {
-                return new AccountApiShape(java.util.Collections.emptyList(), null);
+                return new AccountApiShape(java.util.Collections.emptyList(), java.util.Collections.emptyList(), null);
             }
-            return new AccountApiShape(flagsToForce, constructorDescriptor);
+            List<String> toForce = extras ? intersect(EXTRAS_FLAGS, presentFlags) : java.util.Collections.emptyList();
+            List<String> toStrip = new ArrayList<>();
+            if (blockTelemetry) {
+                toStrip.addAll(intersect(TELEMETRY_FLAGS, presentFlags));
+            }
+            if (blockProfanityFilter) {
+                toStrip.addAll(intersect(PROFANITY_FLAGS, presentFlags));
+            }
+            return new AccountApiShape(toForce, toStrip, constructorDescriptor);
         });
     }
 
-    private List<String> detectAvailableFlags(ClassLoader loader) {
+    private static List<String> intersect(List<String> desired, Set<String> present) {
+        List<String> matched = new ArrayList<>();
+        for (String d : desired) {
+            if (present.contains(d)) {
+                matched.add(d);
+            }
+        }
+        return matched;
+    }
+
+    private Set<String> detectPresentFlags(ClassLoader loader) {
         Set<String> presentFields = new LinkedHashSet<>();
         try (InputStream in = loader.getResourceAsStream(USER_FLAG + ".class")) {
             if (in == null) {
-                return java.util.Collections.emptyList();
+                return presentFields;
             }
             new ClassReader(readAllBytes(in)).accept(new ClassVisitor(Opcodes.ASM9) {
                 @Override
@@ -122,15 +152,9 @@ public class AccountFlagsTransformer implements ClassFileTransformer {
                 }
             }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
         } catch (Throwable t) {
-            return java.util.Collections.emptyList();
+            return new LinkedHashSet<>();
         }
-        List<String> matched = new ArrayList<>();
-        for (String desired : DESIRED_FLAGS) {
-            if (presentFields.contains(desired)) {
-                matched.add(desired);
-            }
-        }
-        return matched;
+        return presentFields;
     }
 
     // Returns CTOR_FLAGS_ONLY or CTOR_FLAGS_AND_BANS depending on which is actually present, or
@@ -168,8 +192,8 @@ public class AccountFlagsTransformer implements ClassFileTransformer {
         return buffer.toByteArray();
     }
 
-    // Rebuilds UserProperties with shape.flagsToForce added to the flags set, using whichever
-    // constructor shape was actually detected; bannedScopes (when present) is left untouched.
+    // Rebuilds UserProperties with shape.flagsToForce added and shape.flagsToStrip removed from
+    // the flags set, using whichever constructor shape was detected; bannedScopes left untouched.
     private byte[] patchPropertiesGetter(ClassReader reader, String className, ClassLoader loader,
                                           AccountApiShape shape) {
         ClassWriter writer = newClassWriter(reader, loader);
@@ -187,7 +211,7 @@ public class AccountFlagsTransformer implements ClassFileTransformer {
                 patched[0] = true;
                 if (verbose) {
                     System.out.println("[mcrl] patching (account flags) " + className + "#" + name + descriptor
-                            + " with " + shape.flagsToForce);
+                            + " force=" + shape.flagsToForce + " strip=" + shape.flagsToStrip);
                 }
                 return new MethodVisitor(Opcodes.ASM9, mv) {
                     @Override
@@ -216,6 +240,13 @@ public class AccountFlagsTransformer implements ClassFileTransformer {
                                 super.visitInsn(Opcodes.DUP);
                                 super.visitFieldInsn(Opcodes.GETSTATIC, USER_FLAG, flagName, "L" + USER_FLAG + ";");
                                 super.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/Set", "add",
+                                        "(Ljava/lang/Object;)Z", true);
+                                super.visitInsn(Opcodes.POP);
+                            }
+                            for (String flagName : shape.flagsToStrip) {
+                                super.visitInsn(Opcodes.DUP);
+                                super.visitFieldInsn(Opcodes.GETSTATIC, USER_FLAG, flagName, "L" + USER_FLAG + ";");
+                                super.visitMethodInsn(Opcodes.INVOKEINTERFACE, "java/util/Set", "remove",
                                         "(Ljava/lang/Object;)Z", true);
                                 super.visitInsn(Opcodes.POP);
                             }
