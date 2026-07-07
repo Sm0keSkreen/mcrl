@@ -14,8 +14,10 @@ import java.util.List;
 import static mcrl.agent.TestSupport.classBytes;
 import static mcrl.agent.TestSupport.internalName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChatRestrictionTransformerTest {
 
@@ -112,5 +114,21 @@ class ChatRestrictionTransformerTest {
         byte[] patched = transformer.transform(testLoader, internalName(LegacyGetterHolderOptions.class),
                 null, null, classBytes(LegacyGetterHolderOptions.class));
         assertNotNull(patched, "the real legacy getter should still be discoverable afterward");
+    }
+
+    // Backs the startup self-check warning: shapeFound() must go from false to true exactly when a
+    // shape is actually confirmed, an unrelated class must never flip it.
+    @Test
+    void shapeFoundReflectsWhetherAShapeWasActuallyConfirmed() throws Exception {
+        ChatRestrictionTransformer transformer = new ChatRestrictionTransformer(false);
+        assertFalse(transformer.shapeFound());
+
+        transformer.transform(testLoader, internalName(UnrelatedEnum.class),
+                null, null, classBytes(UnrelatedEnum.class));
+        assertFalse(transformer.shapeFound(), "an unrelated class must not flip shapeFound()");
+
+        transformer.transform(testLoader, internalName(LegacyChatRestrictionEnum.class),
+                null, null, classBytes(LegacyChatRestrictionEnum.class));
+        assertTrue(transformer.shapeFound());
     }
 }

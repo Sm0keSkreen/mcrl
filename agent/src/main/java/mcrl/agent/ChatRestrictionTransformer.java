@@ -114,6 +114,12 @@ public class ChatRestrictionTransformer implements ClassFileTransformer {
         }
     }
 
+    // Used by the startup self-check to warn if this Minecraft version/loader's chat-restriction
+    // code was never recognized at all, instead of silently doing nothing.
+    boolean shapeFound() {
+        return legacyEnumInternalName.get() != null || modernEnumInternalName.get() != null;
+    }
+
     private enum EnumShape { NONE, LEGACY, MODERN }
 
     // Matches the enum by its constant-name strings, which survive obfuscation/remapping.
