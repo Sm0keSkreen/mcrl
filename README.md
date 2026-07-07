@@ -107,6 +107,17 @@ profile instead, most launchers have their own per-instance JVM arguments field,
 - **Modrinth App**: instance settings, Java tab, custom JVM arguments.
 - **ATLauncher**: instance settings, Java/Minecraft tab, custom JVM arguments.
 
+### Verifying a download
+
+Every release also has a `SHA256SUMS.txt` asset covering `mcrl.jar`, `install.sh`,
+and `install.bat`. To check what you downloaded against it:
+
+```
+sha256sum -c SHA256SUMS.txt --ignore-missing
+```
+
+(on Windows, `CertUtil -hashfile mcrl.jar SHA256` and compare the output by hand.)
+
 ## How it works
 
 It's a `-javaagent`, not a mod, so it sits below whatever loader you're running, or
