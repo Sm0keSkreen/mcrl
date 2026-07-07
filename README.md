@@ -158,17 +158,17 @@ working in-game, reach out, happy to help with whatever's needed for it.
 The Gradle project lives in [`agent/`](agent), see [`agent/README.md`](agent/README.md)
 for requirements, the build command, and a rundown of the source layout.
 
-##Faq
+## Faq
 please note that this project was hevely assested by the use of ai, and also there is no ai used past this line
 
-#why not use the mod No Chat Restrictions?
+# why not use the mod No Chat Restrictions?
 
 in simple terms, this is like a golbal No chat restrrictions, where (once you install it)  every single Minecraft instace will basicly have a "ghost "vertion" of  No Chat Restrictions, that applys to all vertions. also this lets you use vanilla, and is also compattable with all mod loaders (not just the main cupple!) and will work for futere vertions if they keep the chat restrcionts the way they are now. also this works in snapshots and aprill fools snapshots.
 
-#is it compatable with x mod or y instance
+# is it compatable with x mod or y instance
 
 yep... It modifys it in a way where it looks at byte code, and looks at the "shape" and not the name of it. and it runs indpendntly from minecraft's mod loaders and stuff. no amount of diffrent mod loaders and mods should change that.
 
-#there is an issue with x or a bug in y, how do i contact you?
+# there is an issue with x or a bug in y, how do i contact you?
 
 use discord. im sm0keskreen
