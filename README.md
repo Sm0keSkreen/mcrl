@@ -1,5 +1,13 @@
 # Mcrl, Minecraft Chat Restrictions Lifted
 
+[![Last commit](https://img.shields.io/github/last-commit/Dylanthedabber/mcrl)](https://github.com/Dylanthedabber/mcrl/commits/master)
+[![Java](https://img.shields.io/badge/Java-8%2B-orange)](https://github.com/Dylanthedabber/mcrl)
+[![Vanilla](https://img.shields.io/badge/Vanilla-yes-4c1)]()
+[![Forge](https://img.shields.io/badge/Forge-yes-4c1)]()
+[![NeoForge](https://img.shields.io/badge/NeoForge-yes-4c1)]()
+[![Fabric](https://img.shields.io/badge/Fabric-yes-4c1)]()
+[![Quilt](https://img.shields.io/badge/Quilt-yes-4c1)]()
+
 A JVM agent that clears the Microsoft/Xbox account-level "chat disabled" check on the
 Minecraft Java client. It doesn't touch chat signing or reporting, that's a separate
 system (see below).
