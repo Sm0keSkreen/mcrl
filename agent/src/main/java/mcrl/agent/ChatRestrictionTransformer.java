@@ -37,6 +37,11 @@ public class ChatRestrictionTransformer implements ClassFileTransformer {
         if (className == null || classfileBuffer == null) {
             return null;
         }
+        // Skips bootstrap/JDK classes; touching those here can crash with ClassCircularityError.
+        if (loader == null || className.startsWith("java/") || className.startsWith("javax/")
+                || className.startsWith("jdk/") || className.startsWith("sun/")) {
+            return null;
+        }
         try {
             ClassReader reader = new ClassReader(classfileBuffer);
 
