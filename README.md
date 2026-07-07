@@ -26,10 +26,6 @@ double-click it, follow the prompt (install or uninstall, and where). It downloa
 removing it later, pick uninstall and it clears the environment variable and
 optionally deletes the folder.
 
-There's also [`install.ps1`](https://github.com/Dylanthedabber/mcrl/releases/latest/download/install.ps1),
-same prompt, same behavior, if you'd rather run PowerShell (right-click it, choose
-"Run with PowerShell").
-
 Once it's set, that's it, this sticks around from now on. No per-instance JVM
 argument, no re-running this after Minecraft updates, and no re-running it after Mcrl
 itself gets updated either since it always pulls the current jar. Just close every
@@ -44,20 +40,45 @@ and add a new variable named `JDK_JAVA_OPTIONS` with the value
 
 ### Linux / macOS
 
-Same idea. macOS has no launcher-sandbox issues to worry about. On Linux, if you're
-running a Flatpak launcher (PrismLauncher, for example), a plain shell environment
-variable won't reach it, so use this instead:
+Download [`install.sh`](https://github.com/Dylanthedabber/mcrl/releases/latest/download/install.sh)
+and run it (`bash install.sh`), same install/uninstall/choose-path prompt as the
+Windows version. It adds `JDK_JAVA_OPTIONS` to your shell profile (`~/.bashrc` or
+`~/.zshrc`, whichever matches `$SHELL`) for native launchers, and on Linux it also
+checks for common Flatpak launchers (Prism Launcher, PolyMC, Modrinth App, the
+official Minecraft launcher) and sets a Flatpak override for whichever are actually
+installed, since Flatpak apps don't see the host shell's environment at all. It'll
+ask if you use some other Flatpak launcher not on that list too.
+
+Prefer to do it by hand? Same two pieces, just run yourself. For a native,
+non-Flatpak install, add this to your shell profile:
 
 ```
-flatpak override --user --env=JDK_JAVA_OPTIONS='-javaagent:/path/to/Mcrl/mcrl.jar' org.prismlauncher.PrismLauncher
+export JDK_JAVA_OPTIONS="-javaagent:/path/to/mcrl.jar"
 ```
 
-For a native, non-Flatpak install, just add this to your shell profile (`~/.bashrc`,
-`~/.zshrc`, or the macOS equivalent):
+For a Flatpak launcher:
 
 ```
-export JDK_JAVA_OPTIONS="-javaagent:/path/to/Mcrl/mcrl.jar"
+flatpak override --user --env=JDK_JAVA_OPTIONS='-javaagent:/path/to/mcrl.jar' org.prismlauncher.PrismLauncher
 ```
+
+(swap `org.prismlauncher.PrismLauncher` for whichever launcher's Flatpak app ID you're
+using)
+
+### Applying it to just one instance instead
+
+Everything above sets `JDK_JAVA_OPTIONS` globally, every Java program picks it up,
+not just Minecraft (harmless, see [What it actually
+touches](#what-it-actually-touches)). If you'd rather scope it to a single instance or
+profile instead, most launchers have their own per-instance JVM arguments field, paste
+`-javaagent:/path/to/mcrl.jar` in there and skip the environment variable entirely:
+
+- **PrismLauncher / MultiMC / PolyMC**: right-click the instance, "Edit Instance," Java
+  tab, "JVM arguments" box.
+- **Official Minecraft Launcher**: Installations tab, edit a profile, "More Options,"
+  "JVM Arguments" field (append to what's already there, don't replace it).
+- **Modrinth App**: instance settings, Java tab, custom JVM arguments.
+- **ATLauncher**: instance settings, Java/Minecraft tab, custom JVM arguments.
 
 ## How it works
 
@@ -133,10 +154,5 @@ working in-game, reach out, happy to help with whatever's needed for it.
 
 ## Building from source
 
-Needs JDK 17+ and network access so Gradle can pull down ASM and the Shadow plugin.
-
-```
-./gradlew shadowJar   # or: gradle shadowJar
-```
-
-Output lands at `build/libs/mcrl.jar`.
+The Gradle project lives in [`agent/`](agent), see [`agent/README.md`](agent/README.md)
+for requirements, the build command, and a rundown of the source layout.
