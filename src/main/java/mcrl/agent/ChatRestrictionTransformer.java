@@ -11,6 +11,8 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,8 +44,10 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ChatRestrictionTransformer implements ClassFileTransformer {
 
-    private static final Set<String> LEGACY_REQUIRED = Set.of(
-            "ENABLED", "DISABLED_BY_OPTIONS", "DISABLED_BY_PROFILE", "DISABLED_BY_LAUNCHER");
+    // Set.of() is Java 9+; this needs to load on the Java 16 runtime Minecraft 1.17
+    // itself requires (and be inert rather than crash-on-load for anything older).
+    private static final Set<String> LEGACY_REQUIRED = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "ENABLED", "DISABLED_BY_OPTIONS", "DISABLED_BY_PROFILE", "DISABLED_BY_LAUNCHER")));
 
     private final Instrumentation instrumentation;
     private final AtomicReference<String> legacyEnumInternalName = new AtomicReference<>();

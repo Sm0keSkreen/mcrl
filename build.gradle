@@ -17,8 +17,16 @@ dependencies {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    // Target the broadest safe floor, not whatever the newest MC version needs:
+    // JDK_JAVA_OPTIONS is applied globally to every instance PrismLauncher launches,
+    // including much older Minecraft versions that run on older Java runtimes than
+    // the agent itself was built with. A too-new target doesn't just fail to patch
+    // those - the JVM refuses to load the agent at all and the whole game fails to
+    // start (confirmed live: MC 1.17 uses a Java 16 runtime, and a Java-17-targeted
+    // build crashed it with UnsupportedClassVersionError before the game even began
+    // loading). Java 8 covers effectively every Minecraft Java Edition runtime in use.
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 def agentManifest = {
