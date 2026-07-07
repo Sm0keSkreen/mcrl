@@ -45,7 +45,7 @@ if not exist "%JAR_PATH%" (
     goto :end
 )
 
-setx JDK_JAVA_OPTIONS "-javaagent:%JAR_PATH%" >nul
+powershell -NoProfile -Command "[Environment]::SetEnvironmentVariable('JDK_JAVA_OPTIONS', '-javaagent:%JAR_PATH%', 'User')"
 
 echo.
 echo Installed. JDK_JAVA_OPTIONS now points at %JAR_PATH%
@@ -57,7 +57,7 @@ goto :end
 echo.
 echo Looking for an existing install...
 set "CURRENT="
-for /f "usebackq tokens=2,*" %%A in (`reg query "HKCU\Environment" /v JDK_JAVA_OPTIONS 2^>nul ^| findstr /i "JDK_JAVA_OPTIONS"`) do set "CURRENT=%%B"
+for /f "usebackq delims=" %%A in (`powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable('JDK_JAVA_OPTIONS','User')"`) do set "CURRENT=%%A"
 
 echo "%CURRENT%" | findstr /i "mcrl.jar" >nul
 if errorlevel 1 (
@@ -67,7 +67,7 @@ if errorlevel 1 (
 )
 
 set "JAR_PATH=%CURRENT:-javaagent:=%"
-reg delete "HKCU\Environment" /v JDK_JAVA_OPTIONS /f >nul
+powershell -NoProfile -Command "[Environment]::SetEnvironmentVariable('JDK_JAVA_OPTIONS', $null, 'User')"
 echo Removed the JDK_JAVA_OPTIONS environment variable.
 
 for %%F in ("%JAR_PATH%") do set "INSTALL_DIR=%%~dpF"
