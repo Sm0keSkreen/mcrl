@@ -12,14 +12,27 @@ param(
 $ErrorActionPreference = 'Stop'
 $jarUrl = 'https://raw.githubusercontent.com/Dylanthedabber/mcrl/master/mcrl.jar'
 
-function Show-Banner {
+function Show-Frame([string]$Eyes) {
     Write-Host ""
     Write-Host "        /\_/\ " -ForegroundColor Cyan
-    Write-Host "       ( ^.^ )  " -ForegroundColor Cyan -NoNewline
+    Write-Host "       ( $Eyes )  " -ForegroundColor Cyan -NoNewline
     Write-Host "mcrl" -ForegroundColor White -NoNewline
-    Write-Host " - chat restrictions lifted" -ForegroundColor DarkGray
+    Write-Host ", chat restrictions lifted" -ForegroundColor DarkGray
     Write-Host "        > ^ < " -ForegroundColor Cyan
     Write-Host ""
+}
+
+function Show-Banner {
+    for ($i = 0; $i -lt 3; $i++) {
+        Clear-Host
+        Show-Frame "^.^"
+        Start-Sleep -Milliseconds 300
+        Clear-Host
+        Show-Frame "-.-"
+        Start-Sleep -Milliseconds 300
+    }
+    Clear-Host
+    Show-Frame "^.^"
 }
 
 Show-Banner

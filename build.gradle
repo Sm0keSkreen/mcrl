@@ -21,7 +21,7 @@ java {
     // JDK_JAVA_OPTIONS is applied globally to every instance PrismLauncher launches,
     // including much older Minecraft versions that run on older Java runtimes than
     // the agent itself was built with. A too-new target doesn't just fail to patch
-    // those - the JVM refuses to load the agent at all and the whole game fails to
+    // those, the JVM refuses to load the agent at all and the whole game fails to
     // start (confirmed live: MC 1.17 uses a Java 16 runtime, and a Java-17-targeted
     // build crashed it with UnsupportedClassVersionError before the game even began
     // loading). Java 8 covers effectively every Minecraft Java Edition runtime in use.
@@ -49,7 +49,7 @@ shadowJar {
     manifest(agentManifest)
     // -javaagent jars get appended to the system classpath, not just used for
     // Instrumentation. Fabric Loader bundles its own ASM and refuses to start if it
-    // finds a second, differently-named-but-identical copy on the classpath - so the
+    // finds a second, differently-named-but-identical copy on the classpath, so the
     // bundled ASM here must be relocated to a package name nothing else could have.
     relocate 'org.objectweb.asm', 'mcrl.shaded.asm'
 }

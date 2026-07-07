@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * IMPORTANT: there is deliberately no retransformClasses() anywhere in this file.
  * An earlier version used it to patch a getter/adder class that had already
- * loaded before the enum was identified (which happens routinely - the class
+ * loaded before the enum was identified (which happens routinely, the class
  * holding the method usually loads at startup, long before the enum is ever
  * actually touched, e.g. the moment a server connection is opened). That version
  * went through three iterations, and all three broke, confirmed by direct
@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * "LinkageError: attempted duplicate class definition" for the enum itself, no
  * matter whether a Class object for the enum is ever requested or not. Moving
  * the retransformClasses() call to a background thread avoids that crash but
- * loses a real race instead - confirmed live against an actual account, where
+ * loses a real race instead, confirmed live against an actual account, where
  * the game built its per-connection permissions object with the unpatched value
  * because the background thread hadn't finished yet; only reconnecting within
  * the same session (by which point the background thread had caught up) worked.
@@ -200,7 +200,7 @@ public class ChatRestrictionTransformer implements ClassFileTransformer {
 
     /**
      * Fetches a candidate class's bytes as a plain classloader resource and runs
-     * the same check classifyEnum does on it - deliberately not a real class load
+     * the same check classifyEnum does on it, deliberately not a real class load
      * (no Class.forName, no defineClass). getResourceAsStream only ever reads
      * bytes off the classpath/jar; it never asks the classloader to define
      * anything, so calling it here for some other, unrelated, not-yet-loaded
