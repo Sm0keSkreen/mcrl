@@ -8,17 +8,42 @@ version = '1.0.0'
 
 repositories {
     mavenCentral()
+    maven { url 'https://libraries.minecraft.net/' }
 }
 
 dependencies {
     // 9.10.1+ needed to parse Minecraft 26.x class files (Java 25).
     implementation 'org.ow2.asm:asm:9.10.1'
+
+    // Real authlib, same artifact AccountFlagsTransformer patches at runtime; lets tests assert
+    // against actual UserApiService$UserProperties/UserFlag instead of hand-rolled stand-ins.
+    testImplementation 'com.mojang:authlib:9.0.75'
+    testImplementation platform('org.junit:junit-bom:5.11.3')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 java {
     // Java 8 target: the lowest runtime any supported Minecraft version uses.
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+// Tests need real authlib, which only ships Java 17+ variants; scope that requirement to the test
+// configurations only so the shipped jar keeps targeting Java 8.
+tasks.named('compileTestJava') {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+[configurations.testCompileClasspath, configurations.testRuntimeClasspath].each {
+    it.attributes {
+        attribute(org.gradle.api.attributes.java.TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 17)
+    }
 }
 
 def agentManifest = {

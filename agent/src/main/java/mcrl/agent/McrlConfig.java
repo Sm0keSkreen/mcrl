@@ -22,7 +22,12 @@ final class McrlConfig {
     }
 
     static McrlConfig load(String legacyAgentArgs) {
-        File configFile = locateConfigFile();
+        return load(legacyAgentArgs, locateConfigFile());
+    }
+
+    // Split out from load(String) so tests can point at an arbitrary config.json without needing
+    // to control where McrlConfig.class's own jar/classes appear to live on disk.
+    static McrlConfig load(String legacyAgentArgs, File configFile) {
         if (configFile != null && configFile.isFile()) {
             try {
                 String json = new String(Files.readAllBytes(configFile.toPath()), StandardCharsets.UTF_8);
