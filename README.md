@@ -40,12 +40,19 @@ should look like. (An earlier version of this file said vanilla didn't work befo
 
 ## Install (Windows)
 
-Download [`install.ps1`](install.ps1) from this repo, right-click it, choose "Run
-with PowerShell," and follow the prompt (install or uninstall, and where). It
-downloads `mcrl.jar` and points `JDK_JAVA_OPTIONS` at it for you, defaulting to
+Download [`install.bat`](install.bat) from this repo and double-click it, no right-click
+ceremony needed. Follow the prompt (install or uninstall, and where). It downloads
+`mcrl.jar` and points `JDK_JAVA_OPTIONS` at it for you, defaulting to
 `%LOCALAPPDATA%\Mcrl` if you don't pick a different folder. Same script handles
 removing it later, pick uninstall and it clears the environment variable and
 optionally deletes the folder.
+
+There's also [`install.ps1`](install.ps1), same prompt, same behavior, if you'd
+rather run PowerShell (right-click it, choose "Run with PowerShell"). The batch
+version is the one linked above by default because PowerShell's execution policy can
+block a `.ps1` outright depending on how a given machine is configured, sometimes even
+overriding the "Run with PowerShell" context menu's own bypass, whereas `.bat` files
+have no equivalent policy at all, cmd.exe just runs them.
 
 `%LOCALAPPDATA%` is a good default spot specifically because it's hidden by default
 and not somewhere you'd stumble across while tidying up Documents or Desktop, so
