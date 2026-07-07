@@ -3,7 +3,7 @@
 
 set -u
 
-JAR_URL="https://raw.githubusercontent.com/Dylanthedabber/mcrl/master/mcrl.jar"
+JAR_URL="https://raw.githubusercontent.com/Sm0keSkreen/mcrl/master/mcrl.jar"
 DEFAULT_DIR="$HOME/.local/share/mcrl"
 TAG_LINE="# mcrl (added by install.sh)"
 

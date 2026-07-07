@@ -2,8 +2,8 @@
 
 <img src="assets/banner.png" alt="Mcrl, chat restrictions lifted" width="100%">
 
-[![Last commit](https://img.shields.io/github/last-commit/Dylanthedabber/mcrl)](https://github.com/Dylanthedabber/mcrl/commits/master)
-[![Java](https://img.shields.io/badge/Java-8%2B-orange)](https://github.com/Dylanthedabber/mcrl)
+[![Last commit](https://img.shields.io/github/last-commit/Sm0keSkreen/mcrl)](https://github.com/Sm0keSkreen/mcrl/commits/master)
+[![Java](https://img.shields.io/badge/Java-8%2B-orange)](https://github.com/Sm0keSkreen/mcrl)
 [![Vanilla](https://img.shields.io/badge/Vanilla-yes-4c1)]()
 [![Forge](https://img.shields.io/badge/Forge-yes-4c1)]()
 [![NeoForge](https://img.shields.io/badge/NeoForge-yes-4c1)]()
@@ -19,7 +19,7 @@ version. Doesn't touch chat signing or reporting, that's a separate system (see
 
 ### Windows
 
-Download [`install.bat`](https://github.com/Dylanthedabber/mcrl/releases/latest/download/install.bat),
+Download [`install.bat`](https://github.com/Sm0keSkreen/mcrl/releases/latest/download/install.bat),
 double-click it, follow the prompt (install or uninstall, and where). It downloads
 `mcrl.jar` and points `JDK_JAVA_OPTIONS` at it for you, defaulting to
 `%LOCALAPPDATA%\Mcrl` if you don't pick a different folder. Same script handles
@@ -40,7 +40,7 @@ and add a new variable named `JDK_JAVA_OPTIONS` with the value
 
 ### Linux / macOS
 
-Download [`install.sh`](https://github.com/Dylanthedabber/mcrl/releases/latest/download/install.sh)
+Download [`install.sh`](https://github.com/Sm0keSkreen/mcrl/releases/latest/download/install.sh)
 and run it (`bash install.sh`), same install/uninstall/choose-path prompt as the
 Windows version. It adds `JDK_JAVA_OPTIONS` to your shell profile (`~/.bashrc` or
 `~/.zshrc`, whichever matches `$SHELL`) for native launchers, and on Linux it also

@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
-set "JAR_URL=https://raw.githubusercontent.com/Dylanthedabber/mcrl/master/mcrl.jar"
+set "JAR_URL=https://raw.githubusercontent.com/Sm0keSkreen/mcrl/master/mcrl.jar"
 
 echo.
 echo mcrl, chat restrictions lifted
