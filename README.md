@@ -44,24 +44,35 @@ account," and add a new variable named `JDK_JAVA_OPTIONS` with the value
 
 Download [`install.sh`](https://github.com/Sm0keSkreen/mcrl/releases/latest/download/install.sh)
 and run it (`bash install.sh`), same install/uninstall/choose-path prompt as the
-Windows version. It adds `JDK_JAVA_OPTIONS` to your shell profile (`~/.bashrc` or
-`~/.zshrc`, whichever matches `$SHELL`) for native launchers, and on Linux it also
-checks for common Flatpak launchers (Prism Launcher, PolyMC, Modrinth App, the
-official Minecraft launcher) and sets a Flatpak override for whichever are actually
-installed, since Flatpak apps don't see the host shell's environment at all. It'll
-ask if you use some other Flatpak launcher not on that list too.
+Windows version. For native launchers, on systemd Linux it writes
+`~/.config/environment.d/mcrl.conf` (loaded once per login, by the session itself,
+not per-terminal); everywhere else (macOS, non-systemd Linux) it falls back to your
+shell profile (`~/.bashrc` or `~/.zshrc`, whichever matches `$SHELL`), since
+`~/.bashrc` is only read by interactive shells and never reaches a launcher started
+from a desktop icon. On Linux it also lists every installed Flatpak app so you can
+pick which ones to cover (common launchers are pre-selected), and sets a Flatpak
+override, filesystem access included, for each one you choose, since Flatpak apps
+don't see the host shell's environment or the rest of your filesystem at all.
 
 Prefer to do it by hand? Same two pieces, just run yourself. For a native,
-non-Flatpak install, add this to your shell profile:
+non-Flatpak install on a systemd system, put this in `~/.config/environment.d/mcrl.conf`
+(no `export`, just the assignment):
+
+```
+JDK_JAVA_OPTIONS="-javaagent:/path/to/mcrl.jar"
+```
+
+Not on systemd (or on macOS), add this to your shell profile instead:
 
 ```
 export JDK_JAVA_OPTIONS="-javaagent:/path/to/mcrl.jar"
 ```
 
-For a Flatpak launcher:
+For a Flatpak launcher, both the env var and read access to the jar's folder:
 
 ```
 flatpak override --user --env=JDK_JAVA_OPTIONS='-javaagent:/path/to/mcrl.jar' org.prismlauncher.PrismLauncher
+flatpak override --user --filesystem=/path/to:ro org.prismlauncher.PrismLauncher
 ```
 
 (swap `org.prismlauncher.PrismLauncher` for whichever launcher's Flatpak app ID you're
