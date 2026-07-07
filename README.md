@@ -20,18 +20,20 @@ version. Doesn't touch chat signing or reporting, that's a separate system (see
 
 ### Windows
 
-Download [`install.bat`](https://github.com/Sm0keSkreen/mcrl/releases/latest/download/install.bat),
-double-click it, follow the prompt (install or uninstall, and where). It downloads
-`mcrl.jar` and points `JDK_JAVA_OPTIONS` at it for you, defaulting to
-`%LOCALAPPDATA%\Mcrl` if you don't pick a different folder. Same script handles
-removing it later, pick uninstall and it clears the environment variable and
-optionally deletes the folder.
+Download [`install.bat`](https://github.com/Sm0keSkreen/mcrl/releases/latest/download/install.bat)
+and double-click it. Four options: install, uninstall, reconfigure (change your
+Realms/telemetry/profanity choices without touching the jar or environment setup),
+and upgrade (re-download the jar without touching your config or environment setup).
+Install downloads `mcrl.jar` and points `JDK_JAVA_OPTIONS` at it for you, defaulting
+to `%LOCALAPPDATA%\Mcrl` if you don't pick a different folder, and asks the three
+config questions (see [Optional extras](#optional-realms-servers-friends-and-privacy)
+below), writing your answers to `config.json` next to the jar.
 
 Once it's set, that's it, this sticks around from now on. No per-instance JVM
-argument, no re-running this after Minecraft updates, and no re-running it after Mcrl
-itself gets updated either since it always pulls the current jar. Just close every
-open Minecraft launcher window (official launcher, PrismLauncher, CurseForge,
-whatever you use) and reopen after running it.
+argument, no re-running this after Minecraft updates. To pick up a newer mcrl release,
+rerun the script and choose Upgrade, that only touches the jar. Just close every open
+Minecraft launcher window (official launcher, PrismLauncher, CurseForge, whatever you
+use) and reopen after installing or upgrading.
 
 Prefer not to run a script at all? Manual version: download
 [`mcrl.jar`](https://github.com/Sm0keSkreen/mcrl/releases/latest/download/mcrl.jar) from
@@ -45,8 +47,8 @@ username).
 ### Linux / macOS
 
 Download [`install.sh`](https://github.com/Sm0keSkreen/mcrl/releases/latest/download/install.sh)
-and run it (`bash install.sh`), same install/uninstall/choose-path prompt as the
-Windows version. For native launchers it picks the right mechanism per OS, since
+and run it (`bash install.sh`), same install/uninstall/reconfigure/upgrade prompt as
+the Windows version. For native launchers it picks the right mechanism per OS, since
 none of them read a shell profile: on macOS it installs a `LaunchAgent`
 (`~/Library/LaunchAgents`) that runs `launchctl setenv`, active immediately; on
 systemd Linux it writes `~/.config/environment.d/mcrl.conf` (loaded once per login,
@@ -166,32 +168,53 @@ shape, the agent just won't find anything to patch. You'll see its install banne
 print but no "found... enum" or "patching..." lines, which is how you'd notice nothing
 happened.
 
-### Optional: Realms, servers, and friends
+### Optional: Realms, servers, friends, and privacy
 
-Chat unlock is always on. Both install scripts also ask whether to unlock Realms, the
-multiplayer server list, and friends (where the account API has that flag), off by
-default. This patches a different target entirely: Mojang's `authlib` library, which
-unlike Minecraft's own classes is a plain, unobfuscated shared dependency with stable
-names across every loader and version, so it's matched by real class/method name
-instead of the shape-detection the chat patch needs. Enabling it manually means adding
-`=extras` after the jar path in whichever mechanism you're using, e.g.
-`-javaagent:"/path/to/mcrl.jar"=extras`.
+Chat unlock is always on. Both install scripts also ask three more questions, all off
+by default: unlock Realms, the multiplayer server list, and friends (where the
+account API has that flag); allow telemetry reporting to Mojang; and allow the
+in-game chat profanity filter. Your answers get written to a `config.json` next to
+the jar, since this agent applies globally rather than per-instance, one shared file
+covers every instance instead of a per-instance mod config. Change your mind later
+without reinstalling, rerun the install script and choose Reconfigure.
 
-This mirrors what the mod No Chat Restrictions does for these same three flags (not
+This patches a different target than the chat check: Mojang's `authlib` library,
+which unlike Minecraft's own classes is a plain, unobfuscated shared dependency with
+stable names across every loader and version, so it's matched by real class/method
+name instead of the shape-detection the chat patch needs. Unlocking Realms/servers/
+friends adds those flags to your account's real flag set; declining telemetry or the
+profanity filter actively removes those flags if your account already has them,
+rather than just leaving them alone.
+
+This mirrors what the mod No Chat Restrictions does for the same flags (not
 [No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports), a different,
 unrelated project despite the similar name, that one's about chat signing, see above).
 Two differences worth knowing about. First, like that mod, this doesn't force
 `ACCEPT_FRIEND_INVITES` or `CHAT_FRIENDS_ONLY`, leaving those as your account actually
-reports them. Second, unlike that mod, this adds the unlocked flags on top of whatever
-your account's real flag set already is, rather than rebuilding it from an explicit
-allowlist, so if Mojang adds some other flag neither project knows about yet, it stays
-present here instead of silently disappearing. The account API's own flag list has
-grown over time regardless, friends support in particular is a recent addition, so on
-older Minecraft versions whichever flags aren't present yet get silently skipped
-rather than causing an error.
+reports them. Second, unlike that mod, unlocking Realms/servers/friends adds those
+flags on top of whatever your account's real flag set already is, rather than
+rebuilding it from an explicit allowlist, so if Mojang adds some other flag neither
+project knows about yet, it stays present here instead of silently disappearing. The
+account API's own flag list has grown over time regardless, friends support in
+particular is a recent addition, so on older Minecraft versions whichever flags
+aren't present yet get silently skipped rather than causing an error.
 
-Not covered: bypassing a banned username, and the account API's own telemetry/profanity
-toggles, both real capabilities No Chat Restrictions has that this doesn't (yet).
+Not covered: bypassing a banned username, a real capability No Chat Restrictions has
+that this doesn't (yet), it lives on Minecraft's own obfuscated classes rather than
+authlib's stable ones, so it would need the same kind of per-version shape research
+the chat patch needed, not a quick add.
+
+Prefer to do it by hand instead of the install script's prompts? Put this next to
+your `mcrl.jar` as `config.json` (all three fields optional, default `false`, and the
+whole file is optional too, no file at all means none of this applies):
+
+```json
+{
+  "extras": true,
+  "allowTelemetry": false,
+  "allowProfanityFilter": false
+}
+```
 
 ## Beta
 
