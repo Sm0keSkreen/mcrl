@@ -177,12 +177,21 @@ instead of the shape-detection the chat patch needs. Enabling it manually means 
 `=extras` after the jar path in whichever mechanism you're using, e.g.
 `-javaagent:"/path/to/mcrl.jar"=extras`.
 
-Two things worth knowing: it doesn't force `ACCEPT_FRIEND_INVITES` or
-`CHAT_FRIENDS_ONLY`, leaving those as your account actually reports them, matching No
-Chat Reports' own restraint there. And the account API's flag list itself has grown
-over time, friends support in particular is a recent addition, so on older Minecraft
-versions whichever flags aren't present yet get silently skipped rather than causing
-an error.
+This mirrors what the mod No Chat Restrictions does for these same three flags (not
+[No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports), a different,
+unrelated project despite the similar name, that one's about chat signing, see above).
+Two differences worth knowing about. First, like that mod, this doesn't force
+`ACCEPT_FRIEND_INVITES` or `CHAT_FRIENDS_ONLY`, leaving those as your account actually
+reports them. Second, unlike that mod, this adds the unlocked flags on top of whatever
+your account's real flag set already is, rather than rebuilding it from an explicit
+allowlist, so if Mojang adds some other flag neither project knows about yet, it stays
+present here instead of silently disappearing. The account API's own flag list has
+grown over time regardless, friends support in particular is a recent addition, so on
+older Minecraft versions whichever flags aren't present yet get silently skipped
+rather than causing an error.
+
+Not covered: bypassing a banned username, and the account API's own telemetry/profanity
+toggles, both real capabilities No Chat Restrictions has that this doesn't (yet).
 
 ## Beta
 
