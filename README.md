@@ -1,5 +1,7 @@
 # Mcrl, Minecraft Chat Restrictions Lifted
 
+<img src="assets/icon.png" alt="Mcrl cat icon" width="140">
+
 [![Last commit](https://img.shields.io/github/last-commit/Dylanthedabber/mcrl)](https://github.com/Dylanthedabber/mcrl/commits/master)
 [![Java](https://img.shields.io/badge/Java-8%2B-orange)](https://github.com/Dylanthedabber/mcrl)
 [![Vanilla](https://img.shields.io/badge/Vanilla-yes-4c1)]()
