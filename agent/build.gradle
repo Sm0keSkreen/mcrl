@@ -4,7 +4,9 @@ plugins {
 }
 
 group = 'mcrl'
-version = '1.0.0'
+// Kept in sync with the git tag each release is cut from; read back at runtime via
+// Implementation-Version for the update checker to compare against GitHub's latest release.
+version = '1.3.2'
 
 repositories {
     mavenCentral()
@@ -49,7 +51,8 @@ tasks.named('compileTestJava') {
 def agentManifest = {
     attributes(
         'Premain-Class': 'mcrl.agent.McrlAgent',
-        'Agent-Class': 'mcrl.agent.McrlAgent'
+        'Agent-Class': 'mcrl.agent.McrlAgent',
+        'Implementation-Version': project.version.toString()
     )
 }
 

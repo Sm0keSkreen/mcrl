@@ -24,6 +24,7 @@ public final class McrlAgent {
         inst.addTransformer(chatRestrictionTransformer, false);
         if (verbose) {
             scheduleUnsupportedVersionCheck(chatRestrictionTransformer);
+            UpdateChecker.checkInBackground();
         }
 
         McrlConfig config = McrlConfig.load(agentArgs);

@@ -214,6 +214,13 @@ before any agent code even runs.
 The agent itself needs Java 8 or newer to even load, which is about as broad as
 Minecraft's own runtime requirements get across every version.
 
+The one outbound network call it makes: once per launch, in the background, it checks
+GitHub's public releases API to see if a newer mcrl version exists, and prints a
+one-line notice if so. No data about you, your account, or this install is sent, it's
+a plain unauthenticated GET to a public endpoint, same as opening the releases page in
+a browser. Fails silently if you're offline or GitHub's unreachable; never blocks or
+delays anything.
+
 If some future version restructures the feature again in a way that matches neither
 shape, the agent just won't find anything to patch. You'll see its install banner
 print but no "found... enum" or "patching..." lines, which is how you'd notice nothing
