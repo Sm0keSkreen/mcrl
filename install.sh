@@ -97,18 +97,36 @@ download_jar() {
     fi
 }
 
-# Prompts for the three optional toggles and writes config.json into the given directory.
+# Prompts for the three optional toggles and writes config.json into the given directory. Any of
+# extras_override/telemetry_override/profanity_override that's "true" or "false" skips that one
+# prompt and uses the given value instead, so this can also run fully non-interactively.
 prompt_and_write_config() {
-    local target_dir="$1" answer extras_bool telemetry_bool profanity_bool
+    local target_dir="$1" extras_override="${2:-}" telemetry_override="${3:-}" profanity_override="${4:-}"
+    local answer extras_bool telemetry_bool profanity_bool
 
-    read -r -p "Also unlock Realms, the multiplayer server list, and friends where the account API supports it? (y/N): " answer
-    case "$answer" in y|Y) extras_bool=true ;; *) extras_bool=false ;; esac
+    case "$extras_override" in
+        true|false) extras_bool="$extras_override" ;;
+        *)
+            read -r -p "Also unlock Realms, the multiplayer server list, and friends where the account API supports it? (y/N): " answer
+            case "$answer" in y|Y) extras_bool=true ;; *) extras_bool=false ;; esac
+            ;;
+    esac
 
-    read -r -p "Allow telemetry reporting to Mojang? (y/N): " answer
-    case "$answer" in y|Y) telemetry_bool=true ;; *) telemetry_bool=false ;; esac
+    case "$telemetry_override" in
+        true|false) telemetry_bool="$telemetry_override" ;;
+        *)
+            read -r -p "Allow telemetry reporting to Mojang? (y/N): " answer
+            case "$answer" in y|Y) telemetry_bool=true ;; *) telemetry_bool=false ;; esac
+            ;;
+    esac
 
-    read -r -p "Allow the in-game chat profanity filter? (y/N): " answer
-    case "$answer" in y|Y) profanity_bool=true ;; *) profanity_bool=false ;; esac
+    case "$profanity_override" in
+        true|false) profanity_bool="$profanity_override" ;;
+        *)
+            read -r -p "Allow the in-game chat profanity filter? (y/N): " answer
+            case "$answer" in y|Y) profanity_bool=true ;; *) profanity_bool=false ;; esac
+            ;;
+    esac
 
     cat > "$target_dir/config.json" <<CONFIGJSON
 {
@@ -164,6 +182,31 @@ select_flatpak_targets() {
         fi
     done
 }
+
+# For package managers (Homebrew, AUR, etc.) that already know exactly where their own jar
+# lives: writes config.json there directly, skipping the interactive menu entirely. Any of the
+# three toggles can be preset via flags for fully non-interactive/scripted use; whichever aren't
+# still prompt normally.
+if [ "${1:-}" = "--configure-only" ]; then
+    CONFIGURE_DIR="${2:-}"
+    if [ -z "$CONFIGURE_DIR" ] || [ ! -d "$CONFIGURE_DIR" ]; then
+        echo "Usage: install.sh --configure-only <directory-containing-mcrl.jar> [--extras=true|false] [--telemetry=true|false] [--profanity=true|false]"
+        exit 1
+    fi
+    shift 2
+    EXTRAS_FLAG=""
+    TELEMETRY_FLAG=""
+    PROFANITY_FLAG=""
+    for arg in "$@"; do
+        case "$arg" in
+            --extras=*) EXTRAS_FLAG="${arg#--extras=}" ;;
+            --telemetry=*) TELEMETRY_FLAG="${arg#--telemetry=}" ;;
+            --profanity=*) PROFANITY_FLAG="${arg#--profanity=}" ;;
+        esac
+    done
+    prompt_and_write_config "$CONFIGURE_DIR" "$EXTRAS_FLAG" "$TELEMETRY_FLAG" "$PROFANITY_FLAG"
+    exit 0
+fi
 
 echo ""
 echo "mcrl, chat restrictions lifted"

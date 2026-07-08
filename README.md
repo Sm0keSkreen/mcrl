@@ -94,19 +94,39 @@ using)
 
 ### Package managers
 
-If you'd rather let a package manager track updates:
+If you'd rather let a package manager track updates. Ready to install right now:
 
 - **Homebrew** (macOS/Linux): `brew install Sm0keSkreen/mcrl/mcrl`. `brew upgrade mcrl`
   keeps the jar current at a path that never changes, so the one-time `JDK_JAVA_OPTIONS`
-  setup printed after install only needs doing once.
+  setup printed after install only needs doing once. Installed and tested end to end.
 - **Scoop** (Windows): `scoop bucket add mcrl https://github.com/Sm0keSkreen/scoop-mcrl`
   then `scoop install mcrl`. `JDK_JAVA_OPTIONS` is set automatically and stays correct
   across `scoop update mcrl`.
-- **AUR** (Arch Linux): a `PKGBUILD` lives at
-  [`packaging/aur`](packaging/aur) in this repo; see that folder for how to build/install
-  it, or submit it to the AUR yourself.
+- **Nix**: `nix profile install github:Sm0keSkreen/nix-mcrl`, or use the included
+  home-manager module (`programs.mcrl.enable = true;`) to also get `JDK_JAVA_OPTIONS`
+  set for you. See [that repo](https://github.com/Sm0keSkreen/nix-mcrl) for details.
 
-Neither of these hands you the Realms/telemetry/profanity extras automatically, since
+Scoop's and Nix's packages couldn't be tested on their real platforms from here (this
+was built on Linux without Windows or without installing Nix itself); the formats are
+well-understood and Homebrew's equivalent worked cleanly, but if something's off with
+either, open an issue.
+
+Packaging source lives in this repo but isn't published anywhere yet, each of these
+needs an account on that ecosystem's own registry to actually publish, something only
+the repo owner can set up:
+
+- **AUR** (Arch Linux): [`packaging/aur`](packaging/aur)
+- **Chocolatey** (Windows): [`packaging/chocolatey`](packaging/chocolatey)
+- **MacPorts** (macOS): [`packaging/macports`](packaging/macports)
+- **.deb** (Debian/Ubuntu): [`packaging/deb`](packaging/deb), a standalone installable
+  package (build script verified working here), not an APT repo, so it won't auto-update
+  via `apt upgrade`.
+- **.rpm** (Fedora/RHEL): [`packaging/rpm`](packaging/rpm), spec file only, `rpmbuild`
+  wasn't available to build/test it here.
+
+Each folder's README explains how to build/install it yourself or publish it properly.
+
+None of these hand you the Realms/telemetry/profanity extras automatically, since
 those need `config.json`; run the full installer once for that (see above).
 
 ### Applying it to just one instance instead

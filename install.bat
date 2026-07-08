@@ -36,18 +36,37 @@ if not exist "%~1" (
 goto :eof
 
 :prompt_and_write_config
-REM %1 = target install directory
-set "EXTRAS="
-set /p "EXTRAS=Also unlock Realms, the multiplayer server list, and friends where the account API supports it? (y/N): "
-if /i "%EXTRAS%"=="y" (set "EXTRAS_BOOL=true") else (set "EXTRAS_BOOL=false")
+REM %1 = target install directory; %2/%3/%4 = optional true|false overrides for
+REM extras/telemetry/profanity that skip that one prompt, for non-interactive/scripted use.
+if /i "%~2"=="true" (
+    set "EXTRAS_BOOL=true"
+) else if /i "%~2"=="false" (
+    set "EXTRAS_BOOL=false"
+) else (
+    set "EXTRAS="
+    set /p "EXTRAS=Also unlock Realms, the multiplayer server list, and friends where the account API supports it? (y/N): "
+    if /i "!EXTRAS!"=="y" (set "EXTRAS_BOOL=true") else (set "EXTRAS_BOOL=false")
+)
 
-set "TELEMETRY="
-set /p "TELEMETRY=Allow telemetry reporting to Mojang? (y/N): "
-if /i "%TELEMETRY%"=="y" (set "TELEMETRY_BOOL=true") else (set "TELEMETRY_BOOL=false")
+if /i "%~3"=="true" (
+    set "TELEMETRY_BOOL=true"
+) else if /i "%~3"=="false" (
+    set "TELEMETRY_BOOL=false"
+) else (
+    set "TELEMETRY="
+    set /p "TELEMETRY=Allow telemetry reporting to Mojang? (y/N): "
+    if /i "!TELEMETRY!"=="y" (set "TELEMETRY_BOOL=true") else (set "TELEMETRY_BOOL=false")
+)
 
-set "PROFANITY="
-set /p "PROFANITY=Allow the in-game chat profanity filter? (y/N): "
-if /i "%PROFANITY%"=="y" (set "PROFANITY_BOOL=true") else (set "PROFANITY_BOOL=false")
+if /i "%~4"=="true" (
+    set "PROFANITY_BOOL=true"
+) else if /i "%~4"=="false" (
+    set "PROFANITY_BOOL=false"
+) else (
+    set "PROFANITY="
+    set /p "PROFANITY=Allow the in-game chat profanity filter? (y/N): "
+    if /i "!PROFANITY!"=="y" (set "PROFANITY_BOOL=true") else (set "PROFANITY_BOOL=false")
+)
 
 (
     echo {
@@ -64,6 +83,8 @@ echo.
 echo mcrl, chat restrictions lifted
 echo.
 
+if /i "%~1"=="configure" goto :configure_only
+
 echo What would you like to do?
 echo   [1] Install (default)
 echo   [2] Uninstall
@@ -74,6 +95,20 @@ if "%CHOICE%"=="2" goto :uninstall
 if "%CHOICE%"=="3" goto :reconfigure
 if "%CHOICE%"=="4" goto :upgrade
 goto :install
+
+:configure_only
+REM For package managers (Chocolatey, etc.) that already know exactly where their own jar
+REM lives: writes config.json there directly, skipping the interactive menu entirely.
+REM Usage: install.bat configure "C:\path\to\directory-containing-mcrl.jar" [extras true|false] [telemetry true|false] [profanity true|false]
+set "CONFIGURE_DIR=%~2"
+if "%CONFIGURE_DIR%"=="" (
+    echo Usage: install.bat configure "C:\path\to\directory-containing-mcrl.jar" [extras true/false] [telemetry true/false] [profanity true/false]
+    goto :configure_only_end
+)
+call :prompt_and_write_config "%CONFIGURE_DIR%" "%~3" "%~4" "%~5"
+:configure_only_end
+endlocal
+exit /b 0
 
 :install
 set "DEFAULT_DIR=%LOCALAPPDATA%\Mcrl"
