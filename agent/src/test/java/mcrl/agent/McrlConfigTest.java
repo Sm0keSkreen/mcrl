@@ -51,6 +51,19 @@ class McrlConfigTest {
         assertFalse(config.blockProfanityFilter);
     }
 
+    // The Nix packaging's home-manager module generates config.json with builtins.toJSON, which
+    // renders an unset nullable option as a literal JSON `null` rather than omitting the key;
+    // readBoolean's regex only matches a literal true/false value, so null must behave the same
+    // as the key being absent entirely (leave alone), not crash or get treated as false/block.
+    @Test
+    void explicitJsonNullMeansLeaveAlone() throws IOException {
+        McrlConfig config = McrlConfig.load(null,
+                writeConfig("{\"extras\": false, \"allowTelemetry\": null, \"allowProfanityFilter\": null}"));
+
+        assertFalse(config.blockTelemetry);
+        assertFalse(config.blockProfanityFilter);
+    }
+
     @Test
     void noFileFallsBackToLegacyAgentArgs() {
         File nonExistent = tempDir.resolve("does-not-exist.json").toFile();
