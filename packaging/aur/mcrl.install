@@ -6,9 +6,11 @@ This system package doesn't touch your per-user environment; one-time setup
 still needed. Put this in ~/.config/environment.d/mcrl.conf:
   JDK_JAVA_OPTIONS=-javaagent:"/usr/share/mcrl/mcrl.jar"
 
-Or just run the full installer instead, which does this for you and also
-lets you pick the Realms/telemetry/profanity extras:
-  curl -fsSL https://github.com/Sm0keSkreen/mcrl/releases/latest/download/install.sh | bash
+Want the Realms/telemetry/profanity extras? Writes config.json right next to this
+jar, no separate download or install directory (needs sudo, /usr/share/mcrl is a
+system directory):
+  curl -fsSL https://github.com/Sm0keSkreen/mcrl/releases/latest/download/install.sh -o /tmp/mcrl-install.sh
+  sudo bash /tmp/mcrl-install.sh --configure-only /usr/share/mcrl
 
 Either way, close every open Minecraft launcher window and reopen afterward.
 MSG
