@@ -303,6 +303,11 @@ working in-game, reach out, happy to help with whatever's needed for it.
 The Gradle project lives in [`agent/`](agent), see [`agent/README.md`](agent/README.md)
 for requirements, the build command, and a rundown of the source layout.
 
+Cutting a release (maintainer-only): [`scripts/release.sh <version>`](scripts/release.sh)
+bumps the version, builds, tags, publishes the GitHub release, and updates/pushes the
+Homebrew/Scoop/Nix repos to match, one command instead of doing each by hand and
+inevitably forgetting one of them.
+
 # Faq
 please note that this project was hevely assested by the use of ai, and also there is no ai used past this line
 
