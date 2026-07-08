@@ -20,7 +20,7 @@ version. Doesn't touch chat signing or reporting, that's a separate system (see
 
 ### Windows
 
-Download [`install.bat`](https://github.com/Sm0keSkreen/mcrl/releases/latest/download/install.bat)
+Download [`Mcrl.bat`](https://github.com/Sm0keSkreen/mcrl/releases/latest/download/Mcrl.bat)
 and double-click it. Four options: install, uninstall, reconfigure (change your
 Realms/telemetry/profanity choices without touching the jar or environment setup),
 and upgrade (re-download the jar without touching your config or environment setup).
@@ -46,8 +46,8 @@ username).
 
 ### Linux / macOS
 
-Download [`install.sh`](https://github.com/Sm0keSkreen/mcrl/releases/latest/download/install.sh)
-and run it (`bash install.sh`), same install/uninstall/reconfigure/upgrade prompt as
+Download [`Mcrl.sh`](https://github.com/Sm0keSkreen/mcrl/releases/latest/download/Mcrl.sh)
+and run it (`bash Mcrl.sh`), same install/uninstall/reconfigure/upgrade prompt as
 the Windows version. For native launchers it picks the right mechanism per OS, since
 none of them read a shell profile: on macOS it installs a `LaunchAgent`
 (`~/Library/LaunchAgents`) that runs `launchctl setenv`, active immediately; on
@@ -126,7 +126,7 @@ Each folder's README explains how to build/install it yourself or publish it pro
 
 Every option above except Nix (which declares the extras directly, see above) installs
 the jar and, where the format supports it, the environment variable, but not
-`config.json`. Each one prints a ready-to-run command for that, install.sh/install.bat
+`config.json`. Each one prints a ready-to-run command for that, Mcrl.sh/Mcrl.bat
 gained a `--configure-only`/`configure` mode that writes config.json straight into a
 given directory (the package's own fixed install path), skipping the interactive 1-4
 menu entirely and supporting flags (`--extras=true`, etc.) for fully scripted setups
@@ -149,8 +149,8 @@ profile instead, most launchers have their own per-instance JVM arguments field,
 
 ### Verifying a download
 
-Every release also has a `SHA256SUMS.txt` asset covering `mcrl.jar`, `install.sh`,
-and `install.bat`. To check what you downloaded against it:
+Every release also has a `SHA256SUMS.txt` asset covering `mcrl.jar`, `Mcrl.sh`,
+and `Mcrl.bat`. To check what you downloaded against it:
 
 ```
 sha256sum -c SHA256SUMS.txt --ignore-missing

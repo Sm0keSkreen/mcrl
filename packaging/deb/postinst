@@ -8,7 +8,7 @@ echo "README)."
 echo "Want the Realms/telemetry/profanity extras? Writes config.json right next to this"
 echo "jar, no separate download or install directory (needs sudo, /usr/share/mcrl is a"
 echo "system directory):"
-echo "  curl -fsSL https://github.com/Sm0keSkreen/mcrl/releases/latest/download/install.sh -o /tmp/mcrl-install.sh"
-echo "  sudo bash /tmp/mcrl-install.sh --configure-only /usr/share/mcrl"
+echo "  curl -fsSL https://github.com/Sm0keSkreen/mcrl/releases/latest/download/Mcrl.sh -o /tmp/Mcrl.sh"
+echo "  sudo bash /tmp/Mcrl.sh --configure-only /usr/share/mcrl"
 
 exit 0

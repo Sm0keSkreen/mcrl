@@ -5,7 +5,10 @@ set -u
 
 JAR_URL="https://github.com/Sm0keSkreen/mcrl/releases/latest/download/mcrl.jar"
 DEFAULT_DIR="$HOME/.local/share/mcrl"
-TAG_LINE="# mcrl (added by install.sh)"
+TAG_LINE="# mcrl (added by Mcrl.sh)"
+# The script was called install.sh before it got renamed; still recognized on uninstall so an rc
+# file tagged by an older copy still gets cleaned up properly.
+OLD_TAG_LINE="# mcrl (added by install.sh)"
 ENV_D_FILE="$HOME/.config/environment.d/mcrl.conf"
 LAUNCH_AGENT_LABEL="space.mcrl.env"
 LAUNCH_AGENT_PLIST="$HOME/Library/LaunchAgents/$LAUNCH_AGENT_LABEL.plist"
@@ -226,19 +229,19 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
 mcrl installer for Linux/macOS.
 
 Usage:
-  install.sh
+  Mcrl.sh
       Interactive menu: install, uninstall, reconfigure, upgrade, or status.
 
-  install.sh status
+  Mcrl.sh status
       Show the registered jar path, whether it exists, config.json's contents (or its
       absence), and JDK_JAVA_OPTIONS in the current shell. Same as menu option 5.
 
-  install.sh --configure-only <directory-containing-mcrl.jar> [--extras=true|false] [--telemetry=true|false] [--profanity=true|false]
+  Mcrl.sh --configure-only <directory-containing-mcrl.jar> [--extras=true|false] [--telemetry=true|false] [--profanity=true|false]
       Write config.json into an existing install directory without the interactive
       menu; any flag left out still prompts for that one choice. Used by package
       managers that manage the jar themselves.
 
-  install.sh --help | -h
+  Mcrl.sh --help | -h
       Show this message.
 USAGE
     exit 0
@@ -252,7 +255,7 @@ fi
 if [ "${1:-}" = "--configure-only" ]; then
     CONFIGURE_DIR="${2:-}"
     if [ -z "$CONFIGURE_DIR" ] || [ ! -d "$CONFIGURE_DIR" ]; then
-        echo "Usage: install.sh --configure-only <directory-containing-mcrl.jar> [--extras=true|false] [--telemetry=true|false] [--profanity=true|false]"
+        echo "Usage: Mcrl.sh --configure-only <directory-containing-mcrl.jar> [--extras=true|false] [--telemetry=true|false] [--profanity=true|false]"
         exit 1
     fi
     shift 2
@@ -359,7 +362,7 @@ if [ "$CHOICE" = "2" ]; then
             EXTRACTED="${EXTRACTED#\\}"
             EXTRACTED="${EXTRACTED#\"}"
             JAR_PATH="${JAR_PATH:-$EXTRACTED}"
-            grep -vx -e "$TAG_LINE" -e 'export JDK_JAVA_OPTIONS=.*mcrl\.jar.*' "$RC_FILE" > "$RC_FILE.mcrl_tmp" \
+            grep -vx -e "$TAG_LINE" -e "$OLD_TAG_LINE" -e 'export JDK_JAVA_OPTIONS=.*mcrl\.jar.*' "$RC_FILE" > "$RC_FILE.mcrl_tmp" \
                 && mv "$RC_FILE.mcrl_tmp" "$RC_FILE"
             echo "Removed the JDK_JAVA_OPTIONS line from $RC_FILE."
         fi
@@ -444,7 +447,7 @@ elif has_systemd_user; then
 else
     RC_FILE="$(detect_rc_file)"
     touch "$RC_FILE"
-    if ! grep -qx "$TAG_LINE" "$RC_FILE"; then
+    if ! grep -qx -e "$TAG_LINE" -e "$OLD_TAG_LINE" "$RC_FILE"; then
         {
             echo ""
             echo "$TAG_LINE"

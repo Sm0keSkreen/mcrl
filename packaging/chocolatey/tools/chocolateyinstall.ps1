@@ -17,5 +17,5 @@ Write-Host "JDK_JAVA_OPTIONS now points at it. Close every open Minecraft launch
 Write-Host "Want the Realms/telemetry/profanity extras? Writes config.json right next to this jar,"
 Write-Host "no separate download or install directory (run from an elevated PowerShell, same as"
 Write-Host "choco install itself, since this is a system-wide location under ProgramData):"
-Write-Host "  irm https://github.com/Sm0keSkreen/mcrl/releases/latest/download/install.bat -outfile install.bat"
-Write-Host "  .\install.bat configure `"$toolsDir`""
+Write-Host "  irm https://github.com/Sm0keSkreen/mcrl/releases/latest/download/Mcrl.bat -outfile Mcrl.bat"
+Write-Host "  .\Mcrl.bat configure `"$toolsDir`""

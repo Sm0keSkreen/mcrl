@@ -107,19 +107,19 @@ goto :install
 echo mcrl installer for Windows.
 echo.
 echo Usage:
-echo   install.bat
+echo   Mcrl.bat
 echo       Interactive menu: install, uninstall, reconfigure, upgrade, or status.
 echo.
-echo   install.bat status
+echo   Mcrl.bat status
 echo       Show the registered jar path, whether it exists, config.json's contents
 echo       (or its absence), and JDK_JAVA_OPTIONS. Same as menu option 5.
 echo.
-echo   install.bat configure "C:\path\to\directory-containing-mcrl.jar" [extras true/false] [telemetry true/false] [profanity true/false]
+echo   Mcrl.bat configure "C:\path\to\directory-containing-mcrl.jar" [extras true/false] [telemetry true/false] [profanity true/false]
 echo       Write config.json into an existing install directory without the
 echo       interactive menu; any value left out still prompts for that one choice.
 echo       Used by package managers that manage the jar themselves.
 echo.
-echo   install.bat help ^| /? ^| --help ^| -h
+echo   Mcrl.bat help ^| /? ^| --help ^| -h
 echo       Show this message.
 endlocal
 exit /b 0
@@ -168,10 +168,10 @@ goto :end
 :configure_only
 REM For package managers (Chocolatey, etc.) that already know exactly where their own jar
 REM lives: writes config.json there directly, skipping the interactive menu entirely.
-REM Usage: install.bat configure "C:\path\to\directory-containing-mcrl.jar" [extras true|false] [telemetry true|false] [profanity true|false]
+REM Usage: Mcrl.bat configure "C:\path\to\directory-containing-mcrl.jar" [extras true|false] [telemetry true|false] [profanity true|false]
 set "CONFIGURE_DIR=%~2"
 if "%CONFIGURE_DIR%"=="" (
-    echo Usage: install.bat configure "C:\path\to\directory-containing-mcrl.jar" [extras true/false] [telemetry true/false] [profanity true/false]
+    echo Usage: Mcrl.bat configure "C:\path\to\directory-containing-mcrl.jar" [extras true/false] [telemetry true/false] [profanity true/false]
     goto :configure_only_end
 )
 call :prompt_and_write_config "%CONFIGURE_DIR%" "%~3" "%~4" "%~5"
